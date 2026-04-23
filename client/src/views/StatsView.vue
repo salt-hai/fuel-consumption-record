@@ -47,11 +47,27 @@ const loadStats = async () => {
   loading.value = true
   try {
     const [summaryData, monthlyData] = await Promise.all([
-      statsApi.getStatsSummary({ vehicle_id: vehicleId }),
-      statsApi.getMonthlyStats({ vehicle_id: vehicleId }),
+      statsApi.getStatsSummary({ vehicle_id: vehicleId }).catch(() => null),
+      statsApi.getMonthlyStats({ vehicle_id: vehicleId }).catch(() => []),
     ])
-    summary.value = summaryData
-    monthlyStats.value = monthlyData
+    summary.value = summaryData || {
+      total_records: 0,
+      total_cost: 0,
+      total_distance: 0,
+      avg_consumption: 0,
+      latest_consumption: 0,
+    }
+    monthlyStats.value = monthlyData || []
+  } catch (error) {
+    console.error('加载统计数据失败:', error)
+    summary.value = {
+      total_records: 0,
+      total_cost: 0,
+      total_distance: 0,
+      avg_consumption: 0,
+      latest_consumption: 0,
+    }
+    monthlyStats.value = []
   } finally {
     loading.value = false
   }

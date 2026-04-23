@@ -29,15 +29,15 @@ export interface StatsParams {
 
 // 获取统计数据汇总
 export const getStatsSummary = (params?: StatsParams) => {
-  return api.get<any, StatsSummary>('/v1/records/stats/summary', { params })
+  return api.get<StatsSummary>('/v1/records/stats/summary/', { params })
 }
 
 // 获取月度统计
 export const getMonthlyStats = (params?: StatsParams) => {
-  return api.get<any, MonthlyStats[]>('/v1/records/stats', { params })
+  return api.get<MonthlyStats[]>('/v1/records/stats/', { params })
 }
 
 // 获取油耗趋势
 export const getConsumptionTrend = (params?: StatsParams) => {
-  return api.get<any, ConsumptionTrend[]>('/v1/records/stats/trend', { params })
+  return api.get<ConsumptionTrend[]>('/v1/records/stats/trend/', { params })
 }

@@ -8,7 +8,7 @@ from schemas.common import success_response
 
 router = APIRouter(prefix="/v1/records/stats", tags=["统计分析"])
 
-@router.get("/summary")
+@router.get("/summary/")
 async def get_summary(
     vehicle_id: Optional[int] = Query(None),
     db: AsyncSession = Depends(get_db)
@@ -53,10 +53,10 @@ async def get_summary(
         "latest_consumption": round(latest_consumption, 1)
     })
 
-@router.get("")
+@router.get("/")
 async def get_monthly_stats(
     vehicle_id: Optional[int] = Query(None),
-    period: Optional[str] = Query(None),
+    period: Optional[str] = Query(None, description="统计周期: month或year"),
     db: AsyncSession = Depends(get_db)
 ):
     query = select(

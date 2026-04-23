@@ -27,20 +27,20 @@ export interface UpdateVehicleRequest extends Partial<CreateVehicleRequest> {
 
 // 获取车辆列表
 export const getVehicles = () => {
-  return api.get<any, Vehicle[]>('/v1/vehicles')
+  return api.get<Vehicle[]>('/v1/vehicles/')
 }
 
 // 创建车辆
 export const createVehicle = (data: CreateVehicleRequest) => {
-  return api.post<any, Vehicle>('/v1/vehicles', data)
+  return api.post<Vehicle>('/v1/vehicles/', data)
 }
 
 // 更新车辆
 export const updateVehicle = (id: number, data: UpdateVehicleRequest) => {
-  return api.put<any, Vehicle>(`/v1/vehicles/${id}`, data)
+  return api.put<Vehicle>(`/v1/vehicles/${id}/`, data)
 }
 
 // 删除车辆
 export const deleteVehicle = (id: number) => {
-  return api.delete(`/v1/vehicles/${id}`)
+  return api.delete(`/v1/vehicles/${id}/`)
 }

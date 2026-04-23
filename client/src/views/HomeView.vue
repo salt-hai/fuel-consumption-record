@@ -30,11 +30,17 @@ const loadStats = async () => {
   loading.value = true
   try {
     const [summary, trend] = await Promise.all([
-      statsApi.getStatsSummary({ vehicle_id: currentVehicle.value.id }),
-      statsApi.getConsumptionTrend({ vehicle_id: currentVehicle.value.id, months: 6 }),
+      statsApi.getStatsSummary({ vehicle_id: currentVehicle.value.id }).catch(() => null),
+      statsApi.getConsumptionTrend({ vehicle_id: currentVehicle.value.id, months: 6 }).catch(() => []),
     ])
-    stats.value = summary
-    trendData.value = trend
+    stats.value = summary || {
+      total_records: 0,
+      total_cost: 0,
+      total_distance: 0,
+      avg_consumption: 0,
+      latest_consumption: 0,
+    }
+    trendData.value = trend || []
 
     // 同时获取最近记录
     await recordsStore.fetchRecords({
@@ -43,6 +49,14 @@ const loadStats = async () => {
     })
   } catch (error) {
     console.error('加载统计数据失败:', error)
+    stats.value = {
+      total_records: 0,
+      total_cost: 0,
+      total_distance: 0,
+      avg_consumption: 0,
+      latest_consumption: 0,
+    }
+    trendData.value = []
   } finally {
     loading.value = false
   }

@@ -46,25 +46,25 @@ export interface RecordListParams {
 
 // 获取加油记录列表
 export const getRecords = (params: RecordListParams) => {
-  return api.get<any, RecordListResponse>('/v1/records', { params })
+  return api.get<RecordListResponse>('/v1/records/', { params })
 }
 
 // 获取单条记录详情
 export const getRecord = (id: number) => {
-  return api.get<any, FuelRecord>(`/v1/records/${id}`)
+  return api.get<FuelRecord>(`/v1/records/${id}/`)
 }
 
 // 创建加油记录
 export const createRecord = (data: CreateRecordRequest) => {
-  return api.post<any, FuelRecord>('/v1/records', data)
+  return api.post<FuelRecord>('/v1/records/', data)
 }
 
 // 更新加油记录
 export const updateRecord = (id: number, data: UpdateRecordRequest) => {
-  return api.put<any, FuelRecord>(`/v1/records/${id}`, data)
+  return api.put<FuelRecord>(`/v1/records/${id}/`, data)
 }
 
 // 删除加油记录
 export const deleteRecord = (id: number) => {
-  return api.delete(`/v1/records/${id}`)
+  return api.delete(`/v1/records/${id}/`)
 }
