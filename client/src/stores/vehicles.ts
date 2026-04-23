@@ -11,30 +11,37 @@ export const useVehiclesStore = defineStore('vehicles', () => {
   const loading = ref(false)
 
   const currentVehicle = computed(() => {
-    if (!currentVehicleId.value) return vehicles.value[0] || null
-    return vehicles.value.find((v) => v.id === currentVehicleId.value) || null
+    const vehiclesList = vehicles.value || []
+    if (!currentVehicleId.value) return vehiclesList[0] || null
+    return vehiclesList.find((v) => v.id === currentVehicleId.value) || null
   })
 
   const activeVehicles = computed(() =>
-    vehicles.value.filter((v) => v.is_active)
+    (vehicles.value || []).filter((v) => v.is_active)
   )
 
   // 获取车辆列表
   const fetchVehicles = async () => {
     loading.value = true
     try {
-      vehicles.value = await vehiclesApi.getVehicles()
+      const result = await vehiclesApi.getVehicles()
+      // 确保 result 是数组
+      vehicles.value = Array.isArray(result) ? result : []
+    } catch (error) {
+      console.error('获取车辆列表失败:', error)
+      vehicles.value = []
+    } finally {
+      loading.value = false
+      // 确保 vehicles.value 是数组
+      if (!Array.isArray(vehicles.value)) {
+        vehicles.value = []
+      }
 
       // 如果没有当前选中的车辆，默认选中第一个
       if (!currentVehicleId.value && activeVehicles.value.length > 0) {
         currentVehicleId.value = activeVehicles.value[0].id
         saveCurrentVehicleId()
       }
-    } catch (error) {
-      console.error('获取车辆列表失败:', error)
-      vehicles.value = []
-    } finally {
-      loading.value = false
     }
   }
 

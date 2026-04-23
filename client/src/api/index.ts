@@ -31,8 +31,13 @@ api.interceptors.response.use(
   (response: AxiosResponse) => {
     // 后端返回格式: {code: 0, message: "xxx", data: {...}}
     // 解包返回 data 字段
-    const { data } = response.data
-    return data
+    const res = response.data
+    // 检查是否有标准响应格式
+    if (res && typeof res === 'object' && 'code' in res) {
+      return res.data
+    }
+    // 如果没有标准格式，直接返回原始数据
+    return res
   },
   (error) => {
     if (error.response) {
