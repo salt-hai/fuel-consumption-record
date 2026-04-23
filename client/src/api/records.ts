@@ -21,7 +21,6 @@ export interface CreateRecordRequest {
   odometer: number
   volume: number
   total_cost: number
-  unit_price?: number
   full_tank?: boolean
   gas_station?: string
   notes?: string

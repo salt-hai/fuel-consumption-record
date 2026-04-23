@@ -3,7 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useRecordsStore } from '@/stores/records'
 import { useVehiclesStore } from '@/stores/vehicles'
-import { showToast } from 'vant'
+import { showToast, showActionSheet } from 'vant'
 import type { CreateRecordRequest, UpdateRecordRequest, FuelRecord } from '@/api/records'
 
 const router = useRouter()
@@ -20,7 +20,6 @@ const formData = ref({
   odometer: 0,
   volume: 0,
   total_cost: 0,
-  unit_price: 0,
   full_tank: true,
   gas_station: '',
   notes: '',
@@ -32,6 +31,14 @@ const submitting = ref(false)
 const showVehiclePicker = ref(false)
 const showDatePicker = ref(false)
 const currentDateValue = ref<string[]>(formData.value.date.split('-'))
+
+// 计算单价 (只读)
+const calculatedUnitPrice = computed(() => {
+  if (formData.value.volume > 0) {
+    return (formData.value.total_cost / formData.value.volume).toFixed(2)
+  }
+  return '0.00'
+})
 
 const onDateConfirm = (val: any) => {
   formData.value.date = val.selectedValues.join('-')
@@ -67,7 +74,6 @@ const loadRecord = async () => {
       odometer: record.odometer,
       volume: record.volume,
       total_cost: record.total_cost,
-      unit_price: record.unit_price || 0,
       full_tank: record.full_tank,
       gas_station: record.gas_station || '',
       notes: record.notes || '',
@@ -77,21 +83,19 @@ const loadRecord = async () => {
   }
 }
 
-// 自动计算单价
-const onCostChange = () => {
-  if (formData.value.volume > 0) {
-    formData.value.unit_price = formData.value.total_cost / formData.value.volume
-  }
-}
-
-// 自动计算总金额
-const onVolumeOrPriceChange = () => {
-  formData.value.total_cost = formData.value.volume * formData.value.unit_price
-}
-
 const onSubmit = async () => {
   if (!formData.value.vehicle_id) {
     showToast({ message: '请选择车辆' })
+    return
+  }
+
+  if (formData.value.volume <= 0) {
+    showToast({ message: '加油量必须大于0' })
+    return
+  }
+
+  if (formData.value.total_cost <= 0) {
+    showToast({ message: '总金额必须大于0' })
     return
   }
 
@@ -116,6 +120,27 @@ const vehicleName = computed(() => {
   const vehicle = vehiclesStore.vehicles.find(v => v.id === formData.value.vehicle_id)
   return vehicle?.name || '选择车辆'
 })
+
+const onShowVehiclePicker = () => {
+  const vehicles = vehiclesStore.activeVehicles
+  if (vehicles.length === 0) {
+    showToast('暂无车辆，请先添加车辆')
+    return
+  }
+
+  showActionSheet({
+    title: '选择车辆',
+    menu: [
+      ...vehicles.map(v => ({
+        text: v.name,
+        onClick: () => {
+          formData.value.vehicle_id = v.id
+        }
+      })),
+      { text: '取消', theme: 'cancel' }
+    ]
+  })
+}
 </script>
 
 <template>
@@ -134,7 +159,7 @@ const vehicleName = computed(() => {
           placeholder="请选择车辆"
           readonly
           is-link
-          @click="showVehiclePicker = true"
+          @click="onShowVehiclePicker"
         />
 
         <van-field
@@ -167,7 +192,6 @@ const vehicleName = computed(() => {
           placeholder="请输入加油量"
           suffix="L"
           :rules="[{ required: true, message: '请输入加油量' }]"
-          @blur="onVolumeOrPriceChange"
         />
 
         <van-field
@@ -177,16 +201,14 @@ const vehicleName = computed(() => {
           placeholder="请输入总金额"
           suffix="元"
           :rules="[{ required: true, message: '请输入总金额' }]"
-          @blur="onCostChange"
         />
 
         <van-field
-          v-model.number="formData.unit_price"
-          type="number"
+          :value="calculatedUnitPrice"
           label="单价"
           placeholder="自动计算"
           suffix="元/L"
-          @blur="onVolumeOrPriceChange"
+          readonly
         />
 
         <van-field name="full_tank" label="是否加满">
@@ -198,14 +220,14 @@ const vehicleName = computed(() => {
         <van-field
           v-model="formData.gas_station"
           label="加油站"
-          placeholder="请输入加油站名称"
+          placeholder="请输入加油站名称（可选）"
         />
 
         <van-field
           v-model="formData.notes"
           type="textarea"
           label="备注"
-          placeholder="请输入备注"
+          placeholder="请输入备注（可选）"
           rows="2"
           maxlength="200"
           show-word-limit
@@ -224,14 +246,6 @@ const vehicleName = computed(() => {
         </van-button>
       </div>
     </van-form>
-
-    <van-popup v-model:show="showVehiclePicker" position="bottom">
-      <van-picker
-        :columns="vehiclesStore.activeVehicles.map(v => ({ text: v.name, value: v.id }))"
-        @confirm="(val: any) => { formData.vehicle_id = val.value; showVehiclePicker = false }"
-        @cancel="showVehiclePicker = false"
-      />
-    </van-popup>
 
     <van-popup v-model:show="showDatePicker" position="bottom">
       <van-date-picker

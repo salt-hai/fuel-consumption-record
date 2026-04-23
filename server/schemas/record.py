@@ -6,9 +6,8 @@ class RecordCreate(BaseModel):
     vehicle_id: int = Field(..., description="车辆ID")
     date: str = Field(..., description="日期 YYYY-MM-DD")
     odometer: int = Field(..., description="当前里程")
-    volume: float = Field(..., description="加油量(升)")
-    total_cost: float = Field(..., description="总金额")
-    unit_price: Optional[float] = Field(None, description="单价")
+    volume: float = Field(..., gt=0, description="加油量(升)")
+    total_cost: float = Field(..., gt=0, description="总金额")
     full_tank: bool = Field(True, description="是否加满")
     gas_station: Optional[str] = Field(None, description="加油站")
     notes: Optional[str] = Field(None, description="备注")
@@ -17,9 +16,8 @@ class RecordUpdate(BaseModel):
     vehicle_id: Optional[int] = None
     date: Optional[str] = None
     odometer: Optional[int] = None
-    volume: Optional[float] = None
-    total_cost: Optional[float] = None
-    unit_price: Optional[float] = None
+    volume: Optional[float] = Field(None, gt=0)
+    total_cost: Optional[float] = Field(None, gt=0)
     full_tank: Optional[bool] = None
     gas_station: Optional[str] = None
     notes: Optional[str] = None

@@ -129,6 +129,10 @@ async def create_record(data: RecordCreate, db: AsyncSession = Depends(get_db)):
 
     record = FuelRecord(**data.model_dump())
 
+    # 自动计算单价 (元/升)
+    if record.volume > 0:
+        record.unit_price = round(record.total_cost / record.volume, 2)
+
     # 计算油耗（累积法）
     if record.full_tank:
         record.fuel_consumption = await calculate_fuel_consumption(
@@ -154,8 +158,18 @@ async def update_record(
         raise HTTPException(status_code=404, detail="记录不存在")
 
     update_data = data.model_dump(exclude_unset=True)
+
+    # 检查是否需要重新计算单价
+    should_recalc_price = False
+    if 'volume' in update_data or 'total_cost' in update_data:
+        should_recalc_price = True
+
     for key, value in update_data.items():
         setattr(record, key, value)
+
+    # 自动重新计算单价
+    if should_recalc_price and record.volume > 0:
+        record.unit_price = round(record.total_cost / record.volume, 2)
 
     # 重新计算油耗（累积法）
     if record.full_tank:
