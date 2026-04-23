@@ -21,6 +21,10 @@ export const useRecordsStore = defineStore('records', () => {
       })
       records.value = res.items
       total.value = res.total
+    } catch (error) {
+      console.error('获取记录列表失败:', error)
+      records.value = []
+      total.value = 0
     } finally {
       loading.value = false
     }

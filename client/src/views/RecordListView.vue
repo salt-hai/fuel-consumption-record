@@ -20,10 +20,18 @@ onMounted(async () => {
 })
 
 const onRefresh = async () => {
+  loading.value = true
   finished.value = false
-  await recordsStore.fetchRecords({
-    vehicle_id: vehiclesStore.currentVehicleId ?? undefined,
-  })
+  try {
+    await recordsStore.fetchRecords({
+      vehicle_id: vehiclesStore.currentVehicleId ?? undefined,
+    })
+  } catch (error) {
+    console.error('获取记录失败:', error)
+    showToast({ message: '获取记录失败', type: 'fail' })
+  } finally {
+    loading.value = false
+  }
 }
 
 const onDelete = async (id: number) => {

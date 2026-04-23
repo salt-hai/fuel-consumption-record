@@ -30,6 +30,9 @@ export const useVehiclesStore = defineStore('vehicles', () => {
         currentVehicleId.value = activeVehicles.value[0].id
         saveCurrentVehicleId()
       }
+    } catch (error) {
+      console.error('获取车辆列表失败:', error)
+      vehicles.value = []
     } finally {
       loading.value = false
     }

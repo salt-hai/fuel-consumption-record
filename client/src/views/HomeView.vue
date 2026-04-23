@@ -41,15 +41,21 @@ const loadStats = async () => {
       vehicle_id: currentVehicle.value.id,
       page_size: 3,
     })
+  } catch (error) {
+    console.error('加载统计数据失败:', error)
   } finally {
     loading.value = false
   }
 }
 
 onMounted(async () => {
-  await vehiclesStore.fetchVehicles()
-  if (currentVehicle.value) {
-    await loadStats()
+  try {
+    await vehiclesStore.fetchVehicles()
+    if (currentVehicle.value) {
+      await loadStats()
+    }
+  } catch (error) {
+    console.error('初始化失败:', error)
   }
 })
 

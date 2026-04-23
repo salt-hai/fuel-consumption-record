@@ -72,6 +72,14 @@ const onAbout = () => {
   <div class="settings-container">
     <van-nav-bar title="设置" />
 
+    <van-cell-group inset title="车辆管理">
+      <van-cell
+        title="我的车辆"
+        is-link
+        @click="router.push('/vehicles')"
+      />
+    </van-cell-group>
+
     <van-cell-group inset title="账户安全">
       <van-cell
         title="修改密码"
