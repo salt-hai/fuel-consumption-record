@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useVehiclesStore } from '@/stores/vehicles'
 import { useRecordsStore } from '@/stores/records'
 import * as statsApi from '@/api/stats'
 import { formatMoney, formatConsumption, formatOdometer } from '@/utils/format'
 import StatsChart from '@/components/StatsChart.vue'
 
+const router = useRouter()
 const vehiclesStore = useVehiclesStore()
 const recordsStore = useRecordsStore()
 
@@ -89,7 +91,7 @@ const onVehicleChange = async (val: any) => {
     <van-sticky>
       <van-nav-bar
         :title="currentVehicle?.name || '选择车辆'"
-        @click-right="onVehicleChange"
+        @click-right="showVehiclePicker = true"
       >
         <template #right>
           <van-icon name="arrow-down" />
@@ -97,7 +99,17 @@ const onVehicleChange = async (val: any) => {
       </van-nav-bar>
     </van-sticky>
 
-    <!-- 指标卡片 -->
+    <!-- 无车辆时显示提示 -->
+    <div v-if="!currentVehicle && !loading" class="empty-vehicle">
+      <van-empty description="还没有添加车辆">
+        <van-button type="primary" size="small" @click="router.push('/vehicles')">
+          添加车辆
+        </van-button>
+      </van-empty>
+    </div>
+
+    <!-- 有车辆时显示内容 -->
+    <template v-else>
     <div class="stats-cards">
       <van-grid :column-num="2" :border="false">
         <van-grid-item>
@@ -172,6 +184,7 @@ const onVehicleChange = async (val: any) => {
         @cancel="showVehiclePicker = false"
       />
     </van-popup>
+    </template>
   </div>
 </template>
 
@@ -222,5 +235,9 @@ const onVehicleChange = async (val: any) => {
 
 .empty-state {
   padding: 32px 0;
+}
+
+.empty-vehicle {
+  padding: 60px 20px;
 }
 </style>
