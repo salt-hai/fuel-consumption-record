@@ -14,9 +14,15 @@ async def calculate_fuel_consumption(
     db: AsyncSession,
     vehicle_id: int,
     current_odometer: int,
-    current_volume: float
 ) -> Optional[float]:
-    """计算油耗 (L/100km)"""
+    """
+    计算油耗 (L/100km) - 国际标准累积法
+
+    从上次加满到本次加满之间：
+    - 累积加油量 = Σ(中间所有记录的 volume，包括本次)
+    - 累积里程 = 本次里程 - 上次加满里程
+    - 油耗 = 累积加油量 / 累积里程 × 100
+    """
     # 查找上一次加满的记录
     result = await db.execute(
         select(FuelRecord)
@@ -35,11 +41,30 @@ async def calculate_fuel_consumption(
     if not prev_record:
         return None
 
+    # 计算累积里程
     distance = current_odometer - prev_record.odometer
     if distance <= 0:
         return None
 
-    return (current_volume / distance) * 100
+    # 查询两次加满之间的所有记录（不包括上次加满，包括本次加满后的记录）
+    result = await db.execute(
+        select(FuelRecord)
+        .where(
+            and_(
+                FuelRecord.vehicle_id == vehicle_id,
+                FuelRecord.odometer > prev_record.odometer,
+                FuelRecord.odometer <= current_odometer
+            )
+        )
+    )
+    intermediate_records = result.scalars().all()
+
+    # 累积加油量（所有中间记录 + 本次记录的 volume）
+    # 注意：本次记录还没保存，所以需要额外计算
+    total_volume = sum(r.volume for r in intermediate_records)
+
+    # 计算油耗
+    return (total_volume / distance) * 100
 
 @router.get("", response_model=RecordListResponse)
 async def get_records(
@@ -95,10 +120,10 @@ async def create_record(data: RecordCreate, db: AsyncSession = Depends(get_db)):
 
     record = FuelRecord(**data.model_dump())
 
-    # 计算油耗
+    # 计算油耗（累积法）
     if record.full_tank:
         record.fuel_consumption = await calculate_fuel_consumption(
-            db, record.vehicle_id, record.odometer, record.volume
+            db, record.vehicle_id, record.odometer
         )
 
     db.add(record)
@@ -123,10 +148,10 @@ async def update_record(
     for key, value in update_data.items():
         setattr(record, key, value)
 
-    # 重新计算油耗
+    # 重新计算油耗（累积法）
     if record.full_tank:
         record.fuel_consumption = await calculate_fuel_consumption(
-            db, record.vehicle_id, record.odometer, record.volume
+            db, record.vehicle_id, record.odometer
         )
 
     await db.commit()
