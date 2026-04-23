@@ -37,11 +37,35 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   // 登出
-  const logout = () => {
-    token.value = null
-    user.value = null
-    localStorage.removeItem('auth_token')
-    localStorage.removeItem('auth_user')
+  const logout = async () => {
+    try {
+      await authApi.logout()
+    } catch (error) {
+      // 即使后端调用失败，也清除本地状态
+      console.error('Logout API error:', error)
+    } finally {
+      token.value = null
+      user.value = null
+      localStorage.removeItem('auth_token')
+      localStorage.removeItem('auth_user')
+    }
+  }
+
+  // 获取当前用户信息
+  const fetchCurrentUser = async () => {
+    try {
+      const res = await authApi.getCurrentUser()
+      user.value = res
+      localStorage.setItem('auth_user', JSON.stringify(res))
+      return res
+    } catch (error) {
+      // token 可能过期，清除本地状态
+      token.value = null
+      user.value = null
+      localStorage.removeItem('auth_token')
+      localStorage.removeItem('auth_user')
+      throw error
+    }
   }
 
   // 修改密码
@@ -57,5 +81,6 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     logout,
     changePassword,
+    fetchCurrentUser,
   }
 })
