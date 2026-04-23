@@ -14,14 +14,24 @@ async def calculate_fuel_consumption(
     db: AsyncSession,
     vehicle_id: int,
     current_odometer: int,
+    current_volume: float,
 ) -> Optional[float]:
     """
     计算油耗 (L/100km) - 国际标准累积法
 
     从上次加满到本次加满之间：
-    - 累积加油量 = Σ(中间所有记录的 volume，包括本次)
+    - 累积加油量 = Σ(中间所有记录的 volume) + 本次 volume
     - 累积里程 = 本次里程 - 上次加满里程
     - 油耗 = 累积加油量 / 累积里程 × 100
+
+    Args:
+        db: 数据库会话
+        vehicle_id: 车辆 ID
+        current_odometer: 当前里程数
+        current_volume: 本次加油量（升）
+
+    Returns:
+        油耗值 (L/100km)，如果无法计算则返回 None
     """
     # 查找上一次加满的记录
     result = await db.execute(
@@ -46,22 +56,21 @@ async def calculate_fuel_consumption(
     if distance <= 0:
         return None
 
-    # 查询两次加满之间的所有记录（不包括上次加满，包括本次加满后的记录）
+    # 查询两次加满之间的所有记录（不包括上次加满）
     result = await db.execute(
         select(FuelRecord)
         .where(
             and_(
                 FuelRecord.vehicle_id == vehicle_id,
                 FuelRecord.odometer > prev_record.odometer,
-                FuelRecord.odometer <= current_odometer
+                FuelRecord.odometer < current_odometer
             )
         )
     )
     intermediate_records = result.scalars().all()
 
-    # 累积加油量（所有中间记录 + 本次记录的 volume）
-    # 注意：本次记录还没保存，所以需要额外计算
-    total_volume = sum(r.volume for r in intermediate_records)
+    # 累积加油量：所有中间记录 + 本次记录的 volume
+    total_volume = sum(r.volume for r in intermediate_records) + current_volume
 
     # 计算油耗
     return (total_volume / distance) * 100
@@ -123,7 +132,7 @@ async def create_record(data: RecordCreate, db: AsyncSession = Depends(get_db)):
     # 计算油耗（累积法）
     if record.full_tank:
         record.fuel_consumption = await calculate_fuel_consumption(
-            db, record.vehicle_id, record.odometer
+            db, record.vehicle_id, record.odometer, record.volume
         )
 
     db.add(record)
@@ -151,7 +160,7 @@ async def update_record(
     # 重新计算油耗（累积法）
     if record.full_tank:
         record.fuel_consumption = await calculate_fuel_consumption(
-            db, record.vehicle_id, record.odometer
+            db, record.vehicle_id, record.odometer, record.volume
         )
 
     await db.commit()
