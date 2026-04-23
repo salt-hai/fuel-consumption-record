@@ -23,7 +23,7 @@ TestingSessionLocal = async_sessionmaker(
     expire_on_commit=False,
 )
 
-async override_get_db:
+async def override_get_db():
     async with TestingSessionLocal() as session:
         try:
             yield session
