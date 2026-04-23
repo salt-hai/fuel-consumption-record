@@ -172,7 +172,7 @@ const filteredMaintenances = computed(() => {
 })
 
 const vehicleName = computed(() => {
-  const vehicle = vehiclesStore.vehicles.find(v => v.id === formData.value.vehicle_id)
+  const vehicle = (vehiclesStore.vehicles || []).find(v => v.id === formData.value.vehicle_id)
   return vehicle?.name || '选择车辆'
 })
 </script>

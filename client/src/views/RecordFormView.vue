@@ -117,8 +117,13 @@ const onSubmit = async () => {
 }
 
 const vehicleName = computed(() => {
-  const vehicle = vehiclesStore.vehicles.find(v => v.id === formData.value.vehicle_id)
+  const vehicle = (vehiclesStore.vehicles || []).find(v => v.id === formData.value.vehicle_id)
   return vehicle?.name || '点击选择车辆'
+})
+
+// 安全地获取车辆选项
+const vehicleColumns = computed(() => {
+  return (vehiclesStore.vehicles || []).map(v => ({ text: v.name, value: v.id }))
 })
 
 const onSelectVehicle = (id: number) => {
@@ -234,7 +239,7 @@ const onSelectVehicle = (id: number) => {
     <!-- 车辆选择弹窗 -->
     <van-popup v-model:show="showVehiclePicker" position="bottom">
       <van-picker
-        :columns="vehiclesStore.vehicles.map(v => ({ text: v.name, value: v.id }))"
+        :columns="vehicleColumns"
         @confirm="(val: any) => onSelectVehicle(val.value)"
         @cancel="showVehiclePicker = false"
       />

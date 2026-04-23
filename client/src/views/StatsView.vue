@@ -46,6 +46,11 @@ const currentVehicleName = computed(() => {
   return vehiclesStore.currentVehicle?.name || '选择车辆'
 })
 
+// 安全地获取车辆选项
+const vehicleColumns = computed(() => {
+  return (vehiclesStore.vehicles || []).map(v => ({ text: v.name, value: v.id }))
+})
+
 onMounted(async () => {
   try {
     await vehiclesStore.fetchVehicles()
@@ -184,7 +189,7 @@ const onSelectPeriod = (val: any) => {
     <!-- 车辆选择弹窗 -->
     <van-popup v-model:show="showVehiclePicker" position="bottom">
       <van-picker
-        :columns="vehiclesStore.vehicles.map(v => ({ text: v.name, value: v.id }))"
+        :columns="vehicleColumns"
         @confirm="onSelectVehicle"
         @cancel="showVehiclePicker = false"
       />

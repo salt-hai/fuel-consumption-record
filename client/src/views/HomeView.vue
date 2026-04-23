@@ -27,6 +27,11 @@ const trendData = ref<Array<{ date: string; consumption: number }>>([])
 const loading = ref(false)
 const showVehiclePicker = ref(false)
 
+// 安全地获取车辆选项
+const vehicleColumns = computed(() => {
+  return (vehiclesStore.vehicles || []).map(v => ({ text: v.name, value: v.id }))
+})
+
 const loadStats = async () => {
   if (!currentVehicle.value) return
 
@@ -181,7 +186,7 @@ const onSelectVehicle = (val: any) => {
     <!-- 车辆选择弹窗 -->
     <van-popup v-model:show="showVehiclePicker" position="bottom">
       <van-picker
-        :columns="vehiclesStore.vehicles.map(v => ({ text: v.name, value: v.id }))"
+        :columns="vehicleColumns"
         @confirm="onSelectVehicle"
         @cancel="showVehiclePicker = false"
       />
