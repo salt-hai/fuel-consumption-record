@@ -1,19 +1,23 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useVehiclesStore } from '@/stores/vehicles'
 import { formatMoney, formatConsumption, formatOdometer } from '@/utils/format'
 import * as statsApi from '@/api/stats'
+import { showActionSheet, showToast } from 'vant'
 import StatsChart from '@/components/StatsChart.vue'
 
+const router = useRouter()
 const vehiclesStore = useVehiclesStore()
 
-const period = ref('6month')
-const periods = [
+const periodOptions = [
   { text: '近3月', value: '3month' },
   { text: '近6月', value: '6month' },
   { text: '近1年', value: 'year' },
   { text: '全部', value: 'all' },
 ]
+
+const currentPeriod = ref('6month')
 
 const summary = ref({
   total_records: 0,
@@ -34,8 +38,12 @@ const monthlyStats = ref<Array<{
 const loading = ref(false)
 
 onMounted(async () => {
-  await vehiclesStore.fetchVehicles()
-  await loadStats()
+  try {
+    await vehiclesStore.fetchVehicles()
+    await loadStats()
+  } catch (error) {
+    console.error('初始化失败:', error)
+  }
 })
 
 watch(() => vehiclesStore.currentVehicleId, () => {
@@ -72,6 +80,52 @@ const loadStats = async () => {
     loading.value = false
   }
 }
+
+const onShowPeriodPicker = () => {
+  showActionSheet({
+    title: '选择时间范围',
+    menu: [
+      ...periodOptions.map(p => ({
+        text: p.text,
+        onClick: () => {
+          currentPeriod.value = p.value
+        }
+      })),
+      { text: '取消', theme: 'cancel' }
+    ]
+  })
+}
+
+const onShowVehiclePicker = () => {
+  const vehicles = vehiclesStore.activeVehicles
+  if (vehicles.length === 0) {
+    showToast('暂无车辆，请先添加车辆')
+    router.push('/vehicles')
+    return
+  }
+
+  showActionSheet({
+    title: '选择车辆',
+    menu: [
+      ...vehicles.map(v => ({
+        text: v.name,
+        onClick: () => {
+          vehiclesStore.setCurrentVehicle(v.id)
+          loadStats()
+        }
+      })),
+      { text: '取消', theme: 'cancel' }
+    ]
+  })
+}
+
+const currentPeriodText = computed(() => {
+  return periodOptions.find(p => p.value === currentPeriod.value)?.text || '选择时间'
+})
+
+const currentVehicleName = computed(() => {
+  return vehiclesStore.currentVehicle?.name || '选择车辆'
+})
 </script>
 
 <template>
@@ -79,10 +133,16 @@ const loadStats = async () => {
     <van-nav-bar title="统计分析">
       <template #right>
         <van-dropdown-menu>
-          <van-dropdown-item v-model="period" :options="periods" @change="loadStats" />
+          <van-dropdown-item :model-value="currentPeriodText" @click="onShowPeriodPicker" />
         </van-dropdown-menu>
       </template>
     </van-nav-bar>
+
+    <!-- 车辆和时间选择 -->
+    <van-cell-group inset>
+      <van-cell :title="currentVehicleName" is-link @click="onShowVehiclePicker" />
+      <van-cell :title="currentPeriodText" is-link @click="onShowPeriodPicker" />
+    </van-cell-group>
 
     <!-- 汇总卡片 -->
     <van-cell-group inset title="数据汇总">
