@@ -10,13 +10,13 @@ from schemas.common import success_response
 
 router = APIRouter(prefix="/v1/vehicles", tags=["车辆管理"])
 
-@router.get("")
+@router.get("/")
 async def get_vehicles(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Vehicle).order_by(Vehicle.created_at.desc()))
     vehicles = result.scalars().all()
     return success_response([VehicleResponse.model_validate(v) for v in vehicles])
 
-@router.post("")
+@router.post("/")
 async def create_vehicle(data: VehicleCreate, db: AsyncSession = Depends(get_db)):
     vehicle = Vehicle(**data.model_dump())
     db.add(vehicle)
@@ -24,7 +24,7 @@ async def create_vehicle(data: VehicleCreate, db: AsyncSession = Depends(get_db)
     await db.refresh(vehicle)
     return success_response(VehicleResponse.model_validate(vehicle), "添加成功")
 
-@router.put("/{vehicle_id}")
+@router.put("/{vehicle_id}/")
 async def update_vehicle(vehicle_id: int, data: VehicleUpdate, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Vehicle).where(Vehicle.id == vehicle_id))
     vehicle = result.scalar_one_or_none()
@@ -40,7 +40,7 @@ async def update_vehicle(vehicle_id: int, data: VehicleUpdate, db: AsyncSession 
     await db.refresh(vehicle)
     return success_response(VehicleResponse.model_validate(vehicle), "更新成功")
 
-@router.delete("/{vehicle_id}")
+@router.delete("/{vehicle_id}/")
 async def delete_vehicle(vehicle_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Vehicle).where(Vehicle.id == vehicle_id))
     vehicle = result.scalar_one_or_none()

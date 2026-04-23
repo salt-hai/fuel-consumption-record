@@ -10,7 +10,7 @@ from schemas.common import success_response
 
 router = APIRouter(prefix="/v1/maintenance", tags=["保养管理"])
 
-@router.get("", response_model=List[MaintenanceResponse])
+@router.get("")
 async def get_maintenance_records(
     vehicle_id: Optional[int] = Query(None),
     db: AsyncSession = Depends(get_db)
@@ -24,9 +24,9 @@ async def get_maintenance_records(
     result = await db.execute(query)
     records = result.scalars().all()
 
-    return [MaintenanceResponse.model_validate(r) for r in records]
+    return success_response([MaintenanceResponse.model_validate(r) for r in records])
 
-@router.get("/upcoming", response_model=List[MaintenanceResponse])
+@router.get("/upcoming")
 async def get_upcoming_maintenance(
     vehicle_id: Optional[int] = Query(None),
     db: AsyncSession = Depends(get_db)
@@ -52,9 +52,9 @@ async def get_upcoming_maintenance(
             upcoming.append(r)
         # 可以添加更多提醒逻辑，比如里程临近
 
-    return [MaintenanceResponse.model_validate(r) for r in upcoming]
+    return success_response([MaintenanceResponse.model_validate(r) for r in upcoming])
 
-@router.post("", response_model=MaintenanceResponse)
+@router.post("")
 async def create_maintenance(data: MaintenanceCreate, db: AsyncSession = Depends(get_db)):
     # 验证车辆存在
     result = await db.execute(select(Vehicle).where(Vehicle.id == data.vehicle_id))
@@ -66,9 +66,9 @@ async def create_maintenance(data: MaintenanceCreate, db: AsyncSession = Depends
     await db.commit()
     await db.refresh(record)
 
-    return MaintenanceResponse.model_validate(record)
+    return success_response(MaintenanceResponse.model_validate(record), "添加成功")
 
-@router.put("/{record_id}", response_model=MaintenanceResponse)
+@router.put("/{record_id}")
 async def update_maintenance(
     record_id: int,
     data: MaintenanceUpdate,
@@ -87,7 +87,7 @@ async def update_maintenance(
     await db.commit()
     await db.refresh(record)
 
-    return MaintenanceResponse.model_validate(record)
+    return success_response(MaintenanceResponse.model_validate(record), "更新成功")
 
 @router.delete("/{record_id}")
 async def delete_maintenance(record_id: int, db: AsyncSession = Depends(get_db)):

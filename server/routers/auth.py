@@ -83,7 +83,7 @@ async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)):
         }
     }, "登录成功")
 
-@router.delete("/logout")
+@router.delete("/logout/")
 async def logout(
     token: str = Depends(get_token_from_header),
     db: AsyncSession = Depends(get_db)
@@ -102,7 +102,7 @@ async def logout(
 
     return success_response(message="退出成功")
 
-@router.get("/me")
+@router.get("/me/")
 async def get_current_user_info(current_user: User = Depends(get_current_user)):
     """获取当前用户信息"""
     return success_response({
@@ -111,7 +111,7 @@ async def get_current_user_info(current_user: User = Depends(get_current_user)):
         "name": current_user.name
     })
 
-@router.put("/password")
+@router.put("/password/")
 async def change_password(
     data: ChangePasswordRequest,
     current_user: User = Depends(get_current_user),

@@ -75,7 +75,7 @@ async def calculate_fuel_consumption(
     # 计算油耗
     return (total_volume / distance) * 100
 
-@router.get("")
+@router.get("/")
 async def get_records(
     vehicle_id: Optional[int] = Query(None),
     page: int = Query(1, ge=1),
@@ -110,7 +110,7 @@ async def get_records(
         page_size=page_size
     ))
 
-@router.get("/{record_id}")
+@router.get("/{record_id}/")
 async def get_record(record_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(FuelRecord).where(FuelRecord.id == record_id))
     record = result.scalar_one_or_none()
@@ -120,7 +120,7 @@ async def get_record(record_id: int, db: AsyncSession = Depends(get_db)):
 
     return success_response(RecordResponse.model_validate(record))
 
-@router.post("")
+@router.post("/")
 async def create_record(data: RecordCreate, db: AsyncSession = Depends(get_db)):
     # 验证车辆存在
     result = await db.execute(select(Vehicle).where(Vehicle.id == data.vehicle_id))
@@ -145,7 +145,7 @@ async def create_record(data: RecordCreate, db: AsyncSession = Depends(get_db)):
 
     return success_response(RecordResponse.model_validate(record), "添加成功")
 
-@router.put("/{record_id}")
+@router.put("/{record_id}/")
 async def update_record(
     record_id: int,
     data: RecordUpdate,
@@ -182,7 +182,7 @@ async def update_record(
 
     return success_response(RecordResponse.model_validate(record), "更新成功")
 
-@router.delete("/{record_id}")
+@router.delete("/{record_id}/")
 async def delete_record(record_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(FuelRecord).where(FuelRecord.id == record_id))
     record = result.scalar_one_or_none()

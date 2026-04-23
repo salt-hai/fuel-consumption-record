@@ -91,7 +91,7 @@ async def get_monthly_stats(
 
     return success_response(stats)
 
-@router.get("/trend")
+@router.get("/trend/")
 async def get_consumption_trend(
     vehicle_id: Optional[int] = Query(None),
     months: int = Query(6, ge=1, le=24),
