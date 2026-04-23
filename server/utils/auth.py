@@ -2,7 +2,7 @@
 import hashlib
 import secrets
 from datetime import datetime
-from fastapi import HTTPException, Depends, status
+from fastapi import HTTPException, Depends, status, Header
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -35,7 +35,7 @@ def generate_token() -> str:
 
 
 async def get_current_user(
-    token: str = Depends(lambda: None),
+    authorization: str = Header(None),
     db: AsyncSession = Depends(get_db)
 ) -> User:
     """
@@ -43,10 +43,10 @@ async def get_current_user(
 
     This function is designed to be used as a FastAPI dependency in protected routes.
     It extracts and validates the authentication token from the Authorization header
-    or directly from the token parameter, then returns the associated user.
+    and returns the associated user.
 
     Args:
-        token: Authentication token (can be passed as "Bearer <token>" or raw token)
+        authorization: Authorization header value (format: "Bearer <token>")
         db: Database session (injected by FastAPI)
 
     Returns:
@@ -56,15 +56,17 @@ async def get_current_user(
         HTTPException 401: If no token is provided or token is invalid
         HTTPException 403: If user account is disabled
     """
-    if not token:
+    # Extract token from Authorization header
+    if not authorization:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="未提供认证令牌"
         )
 
-    # Extract token from Authorization header if present
-    if token.startswith("Bearer "):
-        token = token[7:]
+    if authorization.startswith("Bearer "):
+        token = authorization[7:]
+    else:
+        token = authorization
 
     # Hash the token for database lookup
     token_hash = hash_token(token)
