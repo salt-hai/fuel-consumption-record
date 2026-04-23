@@ -4,20 +4,19 @@ import { useRouter } from 'vue-router'
 import { useVehiclesStore } from '@/stores/vehicles'
 import { formatMoney, formatConsumption, formatOdometer } from '@/utils/format'
 import * as statsApi from '@/api/stats'
-import { showActionSheet, showToast } from 'vant'
+import { showToast } from 'vant'
 import StatsChart from '@/components/StatsChart.vue'
 
 const router = useRouter()
 const vehiclesStore = useVehiclesStore()
 
+const periodValue = ref('6month')
 const periodOptions = [
   { text: '近3月', value: '3month' },
   { text: '近6月', value: '6month' },
   { text: '近1年', value: 'year' },
   { text: '全部', value: 'all' },
 ]
-
-const currentPeriod = ref('6month')
 
 const summary = ref({
   total_records: 0,
@@ -36,6 +35,16 @@ const monthlyStats = ref<Array<{
 }>>([])
 
 const loading = ref(false)
+const showVehiclePicker = ref(false)
+const showPeriodPicker = ref(false)
+
+const currentPeriodText = computed(() => {
+  return periodOptions.find(p => p.value === periodValue.value)?.text || '选择时间'
+})
+
+const currentVehicleName = computed(() => {
+  return vehiclesStore.currentVehicle?.name || '选择车辆'
+})
 
 onMounted(async () => {
   try {
@@ -81,67 +90,35 @@ const loadStats = async () => {
   }
 }
 
-const onShowPeriodPicker = () => {
-  showActionSheet({
-    title: '选择时间范围',
-    menu: [
-      ...periodOptions.map(p => ({
-        text: p.text,
-        onClick: () => {
-          currentPeriod.value = p.value
-        }
-      })),
-      { text: '取消', theme: 'cancel' }
-    ]
-  })
+const onSelectVehicle = (val: any) => {
+  vehiclesStore.setCurrentVehicle(val.value)
+  showVehiclePicker.value = false
+  loadStats()
 }
 
-const onShowVehiclePicker = () => {
-  const vehicles = vehiclesStore.activeVehicles
-  if (vehicles.length === 0) {
-    showToast('暂无车辆，请先添加车辆')
-    router.push('/vehicles')
-    return
-  }
-
-  showActionSheet({
-    title: '选择车辆',
-    menu: [
-      ...vehicles.map(v => ({
-        text: v.name,
-        onClick: () => {
-          vehiclesStore.setCurrentVehicle(v.id)
-          loadStats()
-        }
-      })),
-      { text: '取消', theme: 'cancel' }
-    ]
-  })
+const onSelectPeriod = (val: any) => {
+  periodValue.value = val.value
+  showPeriodPicker.value = false
+  loadStats()
 }
-
-const currentPeriodText = computed(() => {
-  return periodOptions.find(p => p.value === currentPeriod.value)?.text || '选择时间'
-})
-
-const currentVehicleName = computed(() => {
-  return vehiclesStore.currentVehicle?.name || '选择车辆'
-})
 </script>
 
 <template>
   <div class="stats-container">
-    <van-nav-bar title="统计分析">
-      <template #right>
-        <van-dropdown-menu>
-          <van-dropdown-item :model-value="currentPeriodText" @click="onShowPeriodPicker" />
-        </van-dropdown-menu>
-      </template>
-    </van-nav-bar>
+    <van-nav-bar title="统计分析" />
 
     <!-- 车辆和时间选择 -->
     <van-cell-group inset>
-      <van-cell :title="currentVehicleName" is-link @click="onShowVehiclePicker" />
-      <van-cell :title="currentPeriodText" is-link @click="onShowPeriodPicker" />
+      <van-cell
+        :title="currentVehicleName"
+        is-link
+        @click="showVehiclePicker = true"
+      />
+      <van-cell
+        :title="currentPeriodText"
+        is-link
+        @click="showPeriodPicker = true"
+      />
     </van-cell-group>
 
     <!-- 汇总卡片 -->
@@ -203,6 +180,24 @@ const currentVehicleName = computed(() => {
         </table>
       </div>
     </van-cell-group>
+
+    <!-- 车辆选择弹窗 -->
+    <van-popup v-model:show="showVehiclePicker" position="bottom">
+      <van-picker
+        :columns="vehiclesStore.vehicles.map(v => ({ text: v.name, value: v.id }))"
+        @confirm="onSelectVehicle"
+        @cancel="showVehiclePicker = false"
+      />
+    </van-popup>
+
+    <!-- 时间选择弹窗 -->
+    <van-popup v-model:show="showPeriodPicker" position="bottom">
+      <van-picker
+        :columns="periodOptions"
+        @confirm="onSelectPeriod"
+        @cancel="showPeriodPicker = false"
+      />
+    </van-popup>
   </div>
 </template>
 

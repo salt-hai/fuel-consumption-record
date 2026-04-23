@@ -3,7 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useRecordsStore } from '@/stores/records'
 import { useVehiclesStore } from '@/stores/vehicles'
-import { showToast, showActionSheet } from 'vant'
+import { showToast } from 'vant'
 import type { CreateRecordRequest, UpdateRecordRequest, FuelRecord } from '@/api/records'
 
 const router = useRouter()
@@ -118,28 +118,12 @@ const onSubmit = async () => {
 
 const vehicleName = computed(() => {
   const vehicle = vehiclesStore.vehicles.find(v => v.id === formData.value.vehicle_id)
-  return vehicle?.name || '选择车辆'
+  return vehicle?.name || '点击选择车辆'
 })
 
-const onShowVehiclePicker = () => {
-  const vehicles = vehiclesStore.activeVehicles
-  if (vehicles.length === 0) {
-    showToast('暂无车辆，请先添加车辆')
-    return
-  }
-
-  showActionSheet({
-    title: '选择车辆',
-    menu: [
-      ...vehicles.map(v => ({
-        text: v.name,
-        onClick: () => {
-          formData.value.vehicle_id = v.id
-        }
-      })),
-      { text: '取消', theme: 'cancel' }
-    ]
-  })
+const onSelectVehicle = (id: number) => {
+  formData.value.vehicle_id = id
+  showVehiclePicker.value = false
 }
 </script>
 
@@ -156,10 +140,10 @@ const onShowVehiclePicker = () => {
         <van-field
           :value="vehicleName"
           label="车辆"
-          placeholder="请选择车辆"
+          placeholder="点击选择车辆"
           readonly
           is-link
-          @click="onShowVehiclePicker"
+          @click="showVehiclePicker = true"
         />
 
         <van-field
@@ -246,6 +230,15 @@ const onShowVehiclePicker = () => {
         </van-button>
       </div>
     </van-form>
+
+    <!-- 车辆选择弹窗 -->
+    <van-popup v-model:show="showVehiclePicker" position="bottom">
+      <van-picker
+        :columns="vehiclesStore.vehicles.map(v => ({ text: v.name, value: v.id }))"
+        @confirm="(val: any) => onSelectVehicle(val.value)"
+        @cancel="showVehiclePicker = false"
+      />
+    </van-popup>
 
     <van-popup v-model:show="showDatePicker" position="bottom">
       <van-date-picker

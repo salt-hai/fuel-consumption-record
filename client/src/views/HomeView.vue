@@ -6,7 +6,7 @@ import { useRecordsStore } from '@/stores/records'
 import * as statsApi from '@/api/stats'
 import { formatMoney, formatConsumption, formatOdometer } from '@/utils/format'
 import StatsChart from '@/components/StatsChart.vue'
-import { showActionSheet, showToast } from 'vant'
+import { showToast } from 'vant'
 
 const router = useRouter()
 const vehiclesStore = useVehiclesStore()
@@ -25,6 +25,7 @@ const stats = ref({
 
 const trendData = ref<Array<{ date: string; consumption: number }>>([])
 const loading = ref(false)
+const showVehiclePicker = ref(false)
 
 const loadStats = async () => {
   if (!currentVehicle.value) return
@@ -79,28 +80,9 @@ watch(() => currentVehicle.value?.id, () => {
   loadStats()
 })
 
-// 打开车辆选择器
-const onShowVehiclePicker = () => {
-  const vehicles = vehiclesStore.activeVehicles
-  if (vehicles.length === 0) {
-    showToast('暂无车辆，请先添加车辆')
-    return
-  }
-
-  const options = vehicles.map(v => ({ name: v.name, value: v.id }))
-
-  showActionSheet({
-    title: '选择车辆',
-    menu: [
-      ...options.map(v => ({
-        text: v.name,
-        onClick: () => {
-          vehiclesStore.setCurrentVehicle(v.value)
-        }
-      })),
-      { text: '取消', theme: 'cancel' }
-    ]
-  })
+const onSelectVehicle = (val: any) => {
+  vehiclesStore.setCurrentVehicle(val.value)
+  showVehiclePicker.value = false
 }
 </script>
 
@@ -110,7 +92,7 @@ const onShowVehiclePicker = () => {
     <van-sticky>
       <van-nav-bar
         :title="currentVehicle?.name || '选择车辆'"
-        @click-right="onShowVehiclePicker"
+        @click-right="showVehiclePicker = true"
       >
         <template #right>
           <van-icon name="arrow-down" />
@@ -195,6 +177,15 @@ const onShowVehiclePicker = () => {
       </van-cell>
     </van-cell-group>
     </template>
+
+    <!-- 车辆选择弹窗 -->
+    <van-popup v-model:show="showVehiclePicker" position="bottom">
+      <van-picker
+        :columns="vehiclesStore.vehicles.map(v => ({ text: v.name, value: v.id }))"
+        @confirm="onSelectVehicle"
+        @cancel="showVehiclePicker = false"
+      />
+    </van-popup>
   </div>
 </template>
 
