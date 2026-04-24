@@ -174,6 +174,13 @@ EMAIL_WHITELIST=@company.com,@partner.com
 EMAIL_WHITELIST=
 ```
 
+⚠️ **配置修改后需要重启应用生效**：
+```bash
+# Docker 环境
+docker compose restart  # 开发环境
+docker restart fuel-record  # 生产环境
+```
+
 ### 生产环境安全配置
 
 **推荐使用生产环境模板：**
