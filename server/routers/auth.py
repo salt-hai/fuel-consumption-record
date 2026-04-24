@@ -17,6 +17,12 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 def get_password_hash(password: str) -> str:
+    # bcrypt 限制密码最大 72 字节，自动截断以防止错误
+    # UTF-8 编码下，中文字符占 3 字节，所以先编码再截断
+    password_bytes = password.encode('utf-8')
+    if len(password_bytes) > 72:
+        password_bytes = password_bytes[:72]
+        password = password_bytes.decode('utf-8', errors='ignore')
     return pwd_context.hash(password)
 
 async def get_token_from_header(authorization: str = Header(None)) -> str:
