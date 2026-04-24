@@ -38,6 +38,8 @@
 
 ### Docker 部署（推荐）
 
+#### 方式一：使用 docker run
+
 ```bash
 # 克隆项目
 git clone https://github.com/yourusername/fuel-consumption-record.git
@@ -60,6 +62,23 @@ docker run -d \
   fuel-record:latest
 
 # 访问 http://localhost
+```
+
+#### 方式二：使用 docker-compose（生产）
+
+```bash
+# 配置环境变量
+cp .env.example .env
+nano .env  # 修改 SECRET_KEY
+
+# 启动服务
+docker compose -f docker-compose.prod.yml up -d
+
+# 查看日志
+docker compose -f docker-compose.prod.yml logs -f
+
+# 停止服务
+docker compose -f docker-compose.prod.yml down
 ```
 
 ### 开发环境

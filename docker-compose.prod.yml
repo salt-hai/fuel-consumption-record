@@ -1,0 +1,37 @@
+# 生产环境 Docker Compose 配置
+# 使用方式: docker compose -f docker-compose.prod.yml up -d
+
+services:
+  fuel-record:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: fuel-record:latest
+    container_name: fuel-record
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      # 持久化数据库数据
+      - fuel-data:/app/data
+    env_file:
+      - .env
+    environment:
+      # 生产环境强制使用绝对路径数据库
+      - DATABASE_URL=sqlite+aiosqlite:////app/data/fuel.db
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    # 日志配置（防止日志文件膨胀）
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  fuel-data:
+    driver: local
