@@ -1,7 +1,7 @@
+import bcrypt
 from fastapi import APIRouter, HTTPException, Depends, status, Header
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from passlib.context import CryptContext
 from database import get_db
 from models.user import User
 from models.token import Token
@@ -11,19 +11,22 @@ from utils.auth import get_current_user, generate_token, hash_token
 
 router = APIRouter(prefix="/v1/auth", tags=["认证"])
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    """验证密码"""
+    # bcrypt 限制密码最大 72 字节
+    password_bytes = plain_password.encode('utf-8')
+    if len(password_bytes) > 72:
+        password_bytes = password_bytes[:72]
+    return bcrypt.checkpw(password_bytes, hashed_password.encode('utf-8'))
 
 def get_password_hash(password: str) -> str:
-    # bcrypt 限制密码最大 72 字节，自动截断以防止错误
-    # UTF-8 编码下，中文字符占 3 字节，所以先编码再截断
+    """生成密码哈希"""
+    # bcrypt 限制密码最大 72 字节
     password_bytes = password.encode('utf-8')
     if len(password_bytes) > 72:
         password_bytes = password_bytes[:72]
-        password = password_bytes.decode('utf-8', errors='ignore')
-    return pwd_context.hash(password)
+    hashed = bcrypt.hashpw(password_bytes, bcrypt.gensalt())
+    return hashed.decode('utf-8')
 
 async def get_token_from_header(authorization: str = Header(None)) -> str:
     """从 Authorization 头提取 token"""
