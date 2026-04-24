@@ -13,14 +13,26 @@ const rawInstance: AxiosInstance = axios.create({
   },
 })
 
+// 获取有效的 token（过滤掉 null、undefined 和字符串 "null"）
+function getValidToken(): string | null {
+  const token = localStorage.getItem('auth_token')
+  if (!token || token === 'null' || token === 'undefined' || token === '""') {
+    return null
+  }
+  return token
+}
+
 // 请求拦截器 - 添加 token
 rawInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem('auth_token')
     // 只对需要认证的接口添加 token（登录和注册除外）
     const needsAuth = !config.url?.includes('/auth/login') && !config.url?.includes('/auth/register')
-    if (token && needsAuth && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`
+
+    if (needsAuth && config.headers) {
+      const token = getValidToken()
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`
+      }
     }
     return config
   },
@@ -35,11 +47,11 @@ let isHandling401 = false
 // 响应拦截器 - 统一处理响应和错误
 rawInstance.interceptors.response.use(
   (response: AxiosResponse) => {
-    // 后端返回格式: {code: 0, message: "xxx", data: {...}}
-    // 解包返回 data 字段
     const res = response.data
-    // 检查是否有标准响应格式
+    // 检查是否有标准响应格式 {code: 0, message: "xxx", data: {...}}
     if (res && typeof res === 'object' && 'code' in res) {
+      // 对于认证接口（登录/注册），需要返回完整的 data（包含 token 和 user）
+      // 其他接口也返回 data
       return res.data
     }
     // 如果没有标准格式，直接返回原始数据
@@ -47,26 +59,29 @@ rawInstance.interceptors.response.use(
   },
   (error) => {
     if (error.response) {
-      const { status, data, config } = error.response
+      const { status, data } = error.response
+      const requestUrl = error.config?.url || ''
 
       // 401 未授权 - 清除认证信息并跳转登录
       if (status === 401) {
         // 只处理非登录/注册接口的 401 错误
-        const isAuthEndpoint = config?.url?.includes('/auth/login') || config?.url?.includes('/auth/register')
+        const isAuthEndpoint = requestUrl.includes('/auth/login') || requestUrl.includes('/auth/register')
 
         if (!isAuthEndpoint && !isHandling401) {
           isHandling401 = true
-          // 清除认证信息
+
+          // 清除无效的认证信息
           localStorage.removeItem('auth_token')
           localStorage.removeItem('auth_user')
 
-          // 延迟跳转，避免在登录页面时重复跳转
+          // 跳转到登录页
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login'
+          }
+
           setTimeout(() => {
-            if (window.location.pathname !== '/login') {
-              window.location.href = '/login'
-            }
             isHandling401 = false
-          }, 100)
+          }, 200)
         }
       }
 
