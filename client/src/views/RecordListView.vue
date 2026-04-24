@@ -54,8 +54,20 @@ onMounted(async () => {
 
 // 监听车辆切换
 watch(() => vehiclesStore.currentVehicleId, async () => {
-  await onRefresh()
+  await fetchRecordsSilent()
 })
+
+// 静默刷新（不显示 loading 动画）
+const fetchRecordsSilent = async () => {
+  try {
+    await recordsStore.fetchRecords({
+      vehicle_id: vehiclesStore.currentVehicleId ?? undefined,
+    })
+  } catch (error) {
+    console.error('获取记录失败:', error)
+    showToast({ message: '获取记录失败', type: 'fail' })
+  }
+}
 
 const onRefresh = async () => {
   loading.value = true
@@ -94,7 +106,7 @@ const onVehicleSelect = ({ selectedValues }: { selectedValues: number[] }) => {
   const vehicleId = selectedValues[0]
   if (vehicleId) {
     vehiclesStore.setCurrentVehicle(vehicleId)
-    onRefresh()
+    fetchRecordsSilent() // 静默刷新，不显示 loading
   }
   showVehiclePicker.value = false
 }
