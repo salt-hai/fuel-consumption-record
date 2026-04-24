@@ -52,11 +52,14 @@ cp .env.example .env
 # 构建镜像
 docker build -t fuel-record:latest .
 
-# 运行容器（使用 .env 文件）
+# 创建数据目录
+mkdir -p data
+
+# 运行容器（绑定挂载数据目录）
 docker run -d \
   --name fuel-record \
   -p 80:80 \
-  -v fuel-data:/app/data \
+  -v $(pwd)/data:/data \
   --env-file .env \
   --restart unless-stopped \
   fuel-record:latest
@@ -64,7 +67,7 @@ docker run -d \
 # 访问 http://localhost
 ```
 
-#### 方式二：使用 docker-compose（生产）
+#### 方式二：使用 docker-compose（推荐）
 
 ```bash
 # 配置环境变量
@@ -79,6 +82,15 @@ docker compose -f docker-compose.prod.yml logs -f
 
 # 停止服务
 docker compose -f docker-compose.prod.yml down
+```
+
+**目录结构（运行后）：**
+```
+fuel-consumption-record/
+├── data/
+│   └── fuel.db          # SQLite 数据库
+├── .env                 # 环境变量配置
+└── docker-compose.prod.yml
 ```
 
 ### 开发环境
@@ -227,12 +239,22 @@ fuel-consumption-record/
 
 ## 数据备份
 
+### 使用绑定挂载（推荐）
 ```bash
-# 备份 SQLite 数据库
-docker cp fuel-record:/app/data/fuel.db ./backup-$(date +%Y%m%d).db
+# 数据在本地 ./data/fuel.db，直接备份
+cp data/fuel.db ./backup-$(date +%Y%m%d).db
 
-# 恢复数据库
-docker cp ./backup.db fuel-record:/app/data/fuel.db
+# 恢复
+cp ./backup.db data/fuel.db
+```
+
+### 使用 docker cp
+```bash
+# 备份
+docker cp fuel-record:/data/fuel.db ./backup-$(date +%Y%m%d).db
+
+# 恢复
+docker cp ./backup.db fuel-record:/data/fuel.db
 ```
 
 ## 环境变量配置

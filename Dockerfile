@@ -59,9 +59,9 @@ COPY docker/nginx.conf /etc/nginx/nginx.conf
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# 创建数据目录用于持久化 SQLite 数据库
-RUN mkdir -p /app/data /var/log/nginx && \
-    chown -R www-data:www-data /app/data /usr/share/nginx/html /var/log/nginx
+# 创建数据目录（LinuxServer.io 规范）
+RUN mkdir -p /data /var/log/nginx && \
+    chown -R www-data:www-data /data /usr/share/nginx/html /var/log/nginx
 
 # 暴露端口
 EXPOSE 80

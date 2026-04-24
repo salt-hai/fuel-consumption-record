@@ -11,14 +11,17 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
+    # LinuxServer.io 规范的绑定挂载
     volumes:
-      # 持久化数据库数据
-      - fuel-data:/app/data
+      # 配置目录（如需自定义配置可挂载，当前通过环境变量配置）
+      # - ./config:/config
+      # 数据目录（SQLite 数据库）
+      - ./data:/data
     env_file:
       - .env
     environment:
-      # 生产环境强制使用绝对路径数据库
-      - DATABASE_URL=sqlite+aiosqlite:////app/data/fuel.db
+      # 生产环境数据库路径（指向 /data）
+      - DATABASE_URL=sqlite+aiosqlite:////data/fuel.db
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/health"]
       interval: 30s
@@ -31,7 +34,3 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-
-volumes:
-  fuel-data:
-    driver: local
