@@ -6,8 +6,12 @@ echo "Starting Fuel Consumption Record Application..."
 # 确保数据目录存在
 mkdir -p /app/data
 
+# 设置默认数据库路径（如果未通过环境变量指定）
+export DATABASE_URL="${DATABASE_URL:-sqlite+aiosqlite:////app/data/fuel.db}"
+
 # 启动 FastAPI 后端（后台运行）
 echo "Starting FastAPI backend..."
+echo "Database: $DATABASE_URL"
 cd /app/server
 
 # 首次运行：自动初始化数据库

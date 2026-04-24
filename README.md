@@ -43,14 +43,19 @@
 git clone https://github.com/yourusername/fuel-consumption-record.git
 cd fuel-consumption-record
 
+# （可选）配置环境变量
+cp .env.example .env
+# 编辑 .env 文件，修改 SECRET_KEY 等配置
+
 # 构建镜像
 docker build -t fuel-record:latest .
 
-# 运行容器
+# 运行容器（使用 .env 文件）
 docker run -d \
   --name fuel-record \
   -p 80:80 \
   -v fuel-data:/app/data \
+  --env-file .env \
   --restart unless-stopped \
   fuel-record:latest
 
@@ -209,6 +214,45 @@ docker cp fuel-record:/app/data/fuel.db ./backup-$(date +%Y%m%d).db
 
 # 恢复数据库
 docker cp ./backup.db fuel-record:/app/data/fuel.db
+```
+
+## 环境变量配置
+
+### 快速配置
+
+```bash
+# 复制示例配置文件
+cp .env.example .env
+
+# 编辑配置（至少修改 SECRET_KEY）
+nano .env
+```
+
+### 生产环境必改项
+
+| 变量 | 说明 | 推荐值 |
+|------|------|--------|
+| `SECRET_KEY` | JWT 密钥 | 随机 32+ 字符（`openssl rand -hex 32`） |
+| `DATABASE_URL` | 数据库路径 | `sqlite+aiosqlite:////app/data/fuel.db` |
+
+### 功能开关
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `REGISTRATION_ENABLED` | `true` | 是否允许用户注册 |
+| `EXPORT_ENABLED` | `true` | 是否启用数据导出 |
+| `MAINTENANCE_ENABLED` | `true` | 是否启用保养提醒 |
+| `DOCS_ENABLED` | `true` | 是否启用 API 文档 |
+
+### 安全建议
+
+```bash
+# 生成安全的 SECRET_KEY
+openssl rand -hex 32
+
+# 生产环境关闭注册和文档
+REGISTRATION_ENABLED=false
+DOCS_ENABLED=false
 ```
 
 ## 许可证
