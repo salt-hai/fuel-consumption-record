@@ -130,16 +130,25 @@ const onSubmit = async () => {
   }
 
   submitting.value = true
+  // 使用轻量 toast 提示而不是按钮 loading
+  const toast = showToast({
+    message: isEdit.value ? '保存中...' : '提交中...',
+    duration: 0,
+    forbidClick: true,
+    loadingType: 'circular',
+  })
+
   try {
     if (isEdit.value) {
       await recordsStore.updateRecord(recordId.value, formData.value as UpdateRecordRequest)
-      showToast({ message: '更新成功', type: 'success' })
+      toast({ message: '更新成功', type: 'success' })
     } else {
       await recordsStore.createRecord(formData.value as CreateRecordRequest)
-      showToast({ message: '添加成功', type: 'success' })
+      toast({ message: '添加成功', type: 'success' })
     }
     router.back()
   } catch (error) {
+    toast.close()
     // 错误已由 API 拦截器自动显示
   } finally {
     submitting.value = false
@@ -319,7 +328,7 @@ const onSelectVehicle = ({ selectedValues }: any) => {
           block
           type="primary"
           native-type="submit"
-          :loading="submitting"
+          :disabled="submitting"
           size="large"
         >
           {{ isEdit ? '保存修改' : '添加记录' }}
