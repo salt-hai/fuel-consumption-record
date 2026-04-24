@@ -52,6 +52,7 @@ logs/
 .env.*.local
 # 保留示例文件
 !.env.example
+!.env.production.example
 
 # Testing
 .pytest_cache

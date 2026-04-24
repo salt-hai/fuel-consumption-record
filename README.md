@@ -125,20 +125,55 @@ docker compose down
 
 ## 配置说明
 
-后端通过环境变量或 `.env` 文件配置，主要配置项：
+### 快速配置
 
-| 配置项 | 默认值 | 说明 |
-|--------|--------|------|
-| `DATABASE_URL` | `sqlite+aiosqlite:///./fuel.db` | 数据库连接 |
-| `SECRET_KEY` | - | JWT 密钥（生产环境必须修改） |
-| `DOCS_ENABLED` | `true` | 是否启用 API 文档 |
-| `REGISTRATION_ENABLED` | `true` | 是否允许用户注册 |
-| `EXPORT_ENABLED` | `true` | 是否启用数据导出功能 |
-| `MAINTENANCE_ENABLED` | `true` | 是否启用保养提醒功能 |
-| `CORS_ENABLED` | `true` | 是否启用 CORS |
-| `CORS_ORIGINS` | `*` | 允许的跨域源 |
-| `MAINTENANCE_MODE` | `false` | 维护模式开关 |
-| `DEBUG` | `false` | 调试模式 |
+```bash
+# 复制配置模板
+cp .env.example .env
+
+# ⚠️ 必须修改：生成安全的 SECRET_KEY
+SECRET_KEY=$(openssl rand -hex 32)
+sed -i "s/SECRET_KEY=.*/SECRET_KEY=$SECRET_KEY/" .env
+
+# 编辑其他配置（可选）
+nano .env
+```
+
+### 配置项说明
+
+| 配置项 | 默认值 | 说明 | 生产建议 |
+|--------|--------|------|----------|
+| `DATABASE_URL` | - | 数据库连接 | 使用默认 `/data/fuel.db` |
+| `SECRET_KEY` | - | JWT 密钥 | **必须修改**！用 `openssl rand -hex 32` |
+| `DOCS_ENABLED` | `true` | API 文档 | 建议关闭 `false` |
+| `REGISTRATION_ENABLED` | `true` | 用户注册 | 建议关闭 `false` |
+| `EXPORT_ENABLED` | `true` | 数据导出 | 保持开启 |
+| `MAINTENANCE_ENABLED` | `true` | 保养提醒 | 保持开启 |
+| `CORS_ENABLED` | `true` | 跨域支持 | 根据需要调整 |
+| `CORS_ORIGINS` | `*` | 允许的源 | 限制为实际域名 |
+| `DEBUG` | `false` | 调试模式 | 必须关闭 |
+| `MAINTENANCE_MODE` | `false` | 维护模式 | 维护时开启 |
+
+### 生产环境安全配置
+
+**推荐使用生产环境模板：**
+```bash
+# 使用生产环境配置模板
+cp .env.production.example .env
+
+# 修改 SECRET_KEY（必须！）
+nano .env  # 修改 SECRET_KEY 行
+
+# 修改 CORS_ORIGINS 为实际域名
+CORS_ORIGINS=https://your-domain.com
+```
+
+**安全检查清单：**
+- [ ] `SECRET_KEY` 已修改为随机字符串
+- [ ] `REGISTRATION_ENABLED=false`（关闭公开注册）
+- [ ] `DOCS_ENABLED=false`（关闭 API 文档）
+- [ ] `DEBUG=false`（关闭调试模式）
+- [ ] `CORS_ORIGINS` 限制为实际域名
 
 ## 项目结构
 
