@@ -17,7 +17,9 @@ const rawInstance: AxiosInstance = axios.create({
 rawInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = localStorage.getItem('auth_token')
-    if (token && config.headers) {
+    // 只对需要认证的接口添加 token（登录和注册除外）
+    const needsAuth = !config.url?.includes('/auth/login') && !config.url?.includes('/auth/register')
+    if (token && needsAuth && config.headers) {
       config.headers.Authorization = `Bearer ${token}`
     }
     return config
@@ -26,6 +28,9 @@ rawInstance.interceptors.request.use(
     return Promise.reject(error)
   }
 )
+
+// 标记是否正在处理 401 错误（防止重复处理）
+let isHandling401 = false
 
 // 响应拦截器 - 统一处理响应和错误
 rawInstance.interceptors.response.use(
@@ -42,13 +47,27 @@ rawInstance.interceptors.response.use(
   },
   (error) => {
     if (error.response) {
-      const { status, data } = error.response
+      const { status, data, config } = error.response
 
-      // 401 未授权 - 跳转登录
+      // 401 未授权 - 清除认证信息并跳转登录
       if (status === 401) {
-        localStorage.removeItem('auth_token')
-        localStorage.removeItem('auth_user')
-        window.location.href = '/login'
+        // 只处理非登录/注册接口的 401 错误
+        const isAuthEndpoint = config?.url?.includes('/auth/login') || config?.url?.includes('/auth/register')
+
+        if (!isAuthEndpoint && !isHandling401) {
+          isHandling401 = true
+          // 清除认证信息
+          localStorage.removeItem('auth_token')
+          localStorage.removeItem('auth_user')
+
+          // 延迟跳转，避免在登录页面时重复跳转
+          setTimeout(() => {
+            if (window.location.pathname !== '/login') {
+              window.location.href = '/login'
+            }
+            isHandling401 = false
+          }, 100)
+        }
       }
 
       // 返回错误信息
