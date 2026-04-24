@@ -7,7 +7,8 @@ WORKDIR /app/client
 RUN npm install -g pnpm
 
 # 复制前端依赖文件
-COPY client/package.json client/pnpm-lock.yaml ./
+COPY client/package.json ./
+COPY client/pnpm-lock.yaml ./
 
 # 安装依赖
 RUN pnpm install --frozen-lockfile
