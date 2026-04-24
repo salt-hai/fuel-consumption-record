@@ -31,3 +31,5 @@ dist-ssr
 
 # Types
 *.tsbuildinfo
+src/auto-imports.d.ts
+src/components.d.ts
