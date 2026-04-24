@@ -8,7 +8,7 @@ from models.token import Token
 from schemas.auth import RegisterRequest, LoginRequest, ChangePasswordRequest
 from schemas.common import success_response
 from utils.auth import get_current_user, generate_token, hash_token
-from config import settings
+from config import settings, is_email_allowed
 
 router = APIRouter(prefix="/v1/auth", tags=["认证"])
 
@@ -43,6 +43,13 @@ async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="注册功能已关闭，请联系管理员开通账户"
+        )
+
+    # 检查邮箱白名单
+    if not is_email_allowed(data.email):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="该邮箱不在允许注册的白名单中"
         )
 
     result = await db.execute(select(User).where(User.email == data.email))

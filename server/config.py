@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     # ===== 应用功能开关 =====
     # 是否启用用户注册（生产环境可关闭）
     REGISTRATION_ENABLED: bool = True
+    # 邮箱白名单（逗号分隔，空表示不限制）
+    # 示例: user1@example.com,user2@example.com 或 @example.com（允许整个域名）
+    EMAIL_WHITELIST: str = ""
     # 是否启用数据导出功能
     EXPORT_ENABLED: bool = True
     # 是否启用保养提醒功能
@@ -82,3 +85,54 @@ def get_cors_origins() -> list[str]:
     if origins == "*":
         return ["*"]
     return [origin.strip() for origin in origins.split(",") if origin.strip()]
+
+
+def get_email_whitelist() -> list[str]:
+    """解析邮箱白名单
+
+    支持两种格式：
+    1. 完整邮箱: user@example.com
+    2. 域名通配符: @example.com (允许该域名下所有邮箱)
+
+    返回格式: ["user@example.com", "@example.com"]
+    """
+    if not settings.EMAIL_WHITELIST:
+        return []
+
+    whitelist = []
+    for item in settings.EMAIL_WHITELIST.split(","):
+        item = item.strip()
+        if item:
+            # 自动添加 @ 前缀（如果用户只写了域名）
+            if not item.startswith("@") and "@" not in item:
+                item = f"@{item}"
+            whitelist.append(item)
+    return whitelist
+
+
+def is_email_allowed(email: str) -> bool:
+    """检查邮箱是否在白名单中
+
+    Args:
+        email: 待检查的邮箱地址
+
+    Returns:
+        True 如果邮箱在白名单中或白名单为空，False 否则
+    """
+    whitelist = get_email_whitelist()
+    if not whitelist:
+        return True
+
+    email_lower = email.lower()
+
+    for allowed in whitelist:
+        allowed_lower = allowed.lower()
+        # 域名通配符匹配
+        if allowed_lower.startswith("@"):
+            if email_lower.endswith(allowed_lower):
+                return True
+        # 完整邮箱匹配
+        elif email_lower == allowed_lower:
+            return True
+
+    return False

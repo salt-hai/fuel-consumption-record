@@ -147,6 +147,7 @@ nano .env
 | `SECRET_KEY` | - | JWT 密钥 | **必须修改**！用 `openssl rand -hex 32` |
 | `DOCS_ENABLED` | `true` | API 文档 | 建议关闭 `false` |
 | `REGISTRATION_ENABLED` | `true` | 用户注册 | 建议关闭 `false` |
+| `EMAIL_WHITELIST` | - | 邮箱白名单 | 建议配置，限制注册邮箱 |
 | `EXPORT_ENABLED` | `true` | 数据导出 | 保持开启 |
 | `MAINTENANCE_ENABLED` | `true` | 保养提醒 | 保持开启 |
 | `CORS_ENABLED` | `true` | 跨域支持 | **生产关闭** `false` |
@@ -157,6 +158,21 @@ nano .env
 **⚠️ 关于 CORS 配置：**
 - **生产环境不需要**：使用 Nginx 反向代理，前后端同源，设置 `CORS_ENABLED=false`
 - **开发环境需要**：前端 `localhost:5173`，后端 `localhost:8000`，设置 `CORS_ENABLED=true`
+
+**📧 邮箱白名单配置：**
+限制哪些邮箱可以注册，防止公网环境下随意注册。
+
+```bash
+# .env 文件配置
+# 允许特定用户
+EMAIL_WHITELIST=user1@example.com,user2@company.com
+
+# 允许整个域名（使用 @ 前缀）
+EMAIL_WHITELIST=@company.com,@partner.com
+
+# 空值表示不限制（生产环境不推荐）
+EMAIL_WHITELIST=
+```
 
 ### 生产环境安全配置
 
@@ -175,6 +191,7 @@ CORS_ORIGINS=https://your-domain.com
 **安全检查清单：**
 - [ ] `SECRET_KEY` 已修改为随机字符串
 - [ ] `REGISTRATION_ENABLED=false`（关闭公开注册）
+- [ ] `EMAIL_WHITELIST` 已配置（限制可注册邮箱）
 - [ ] `DOCS_ENABLED=false`（关闭 API 文档）
 - [ ] `CORS_ENABLED=false`（生产环境不需要 CORS）
 - [ ] `DEBUG=false`（关闭调试模式）
