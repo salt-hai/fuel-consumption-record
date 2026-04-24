@@ -1,53 +1,35 @@
-# 开发环境 Docker Compose 配置
-# 生产环境请使用 docker-compose.prod.yml
+# 生产环境 Docker Compose 配置
 
 services:
-  # 前端开发服务（Vite 热重载）
-  frontend:
+  fuel-record:
     build:
-      context: ./client
-      dockerfile: Dockerfile.dev
-    volumes:
-      - ./client:/app
-      - /app/node_modules
+      context: .
+      dockerfile: Dockerfile
+    image: fuel-record:latest
+    container_name: fuel-record
+    restart: unless-stopped
     ports:
-      - "5173:5173"
-    environment:
-      - VITE_API_BASE_URL=http://localhost:8000
-    command: pnpm dev --host
-    develop:
-      watch:
-        - action: sync
-          path: ./client/src
-          target: /app/src
-          ignore:
-            - node_modules/
-
-  # 后端开发服务（FastAPI 热重载）
-  backend:
-    build:
-      context: ./server
-      dockerfile: Dockerfile.dev
+      - "5173:80"
+    # LinuxServer.io 规范的绑定挂载
     volumes:
-      - ./server:/app
-      - server-data:/app/data
-    ports:
-      - "8000:8000"
+      # 配置目录（如需自定义配置可挂载，当前通过环境变量配置）
+      # - ./config:/config
+      # 数据目录（SQLite 数据库）
+      - ./data:/data
     env_file:
       - .env
     environment:
-      - DATABASE_URL=sqlite+aiosqlite:////app/data/fuel.db
-      - DEBUG=true
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-    develop:
-      watch:
-        - action: sync
-          path: ./server
-          target: /app
-          ignore:
-            - __pycache__
-            - .pyc
-            - fuel.db
-
-volumes:
-  server-data:
+      # 生产环境数据库路径（指向 /data）
+      - DATABASE_URL=sqlite+aiosqlite:////data/fuel.db
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    # 日志配置（防止日志文件膨胀）
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
