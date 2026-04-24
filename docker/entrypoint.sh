@@ -16,15 +16,28 @@ cd /app/server
 
 # 首次运行：自动初始化数据库
 if [ ! -f /data/fuel.db ]; then
-    echo "Initializing database..."
-    python -c "from database import init_db; import asyncio; asyncio.run(init_db())"
+  echo "Initializing database..."
+  python -c "from database import init_db; import asyncio; asyncio.run(init_db())"
 fi
 
 # 启动 uvicorn
 uvicorn main:app --host 0.0.0.0 --port 8000 &
 
-# 等待后端启动
-sleep 3
+# 等待后端健康检查通过（最多30秒）
+echo "Waiting for backend to be ready..."
+for i in {1..30}; do
+  if curl -sf http://localhost:8000/health > /dev/null 2>&1; then
+    echo "Backend is ready!"
+    break
+  fi
+  if [ $i -eq 30 ]; then
+    echo "Warning: Backend health check failed after 30 seconds"
+    echo "Starting Nginx anyway..."
+    break
+  fi
+  echo "Waiting for backend... ($i/30)"
+  sleep 1
+done
 
 # 启动 Nginx 前台运行
 echo "Starting Nginx..."
