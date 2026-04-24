@@ -35,6 +35,7 @@ const monthlyStats = ref<Array<{
 }>>([])
 
 const loading = ref(false)
+const isInitialized = ref(false)
 const showVehiclePicker = ref(false)
 const showPeriodPicker = ref(false)
 const vehiclePickerValue = ref<number[]>([])
@@ -55,28 +56,9 @@ const vehicleColumns = computed(() => {
   }))
 })
 
-onMounted(async () => {
-  try {
-    await vehiclesStore.fetchVehicles()
-    if (vehiclesStore.currentVehicle) {
-      vehiclePickerValue.value = [vehiclesStore.currentVehicle.id]
-    }
-    await loadStats()
-  } catch (error) {
-    console.error('初始化失败:', error)
-  }
-})
-
-watch(() => vehiclesStore.currentVehicleId, (newId) => {
-  if (newId) {
-    vehiclePickerValue.value = [newId]
-    loadStats()
-  }
-})
-
-const loadStats = async () => {
+// 静默刷新（不显示 loading）
+const loadStatsSilent = async () => {
   const vehicleId = vehiclesStore.currentVehicleId ?? undefined
-  loading.value = true
   try {
     const [summaryData, monthlyData] = await Promise.all([
       statsApi.getStatsSummary({ vehicle_id: vehicleId }).catch(() => null),
@@ -98,6 +80,35 @@ const loadStats = async () => {
       total_distance: 0,
       avg_consumption: 0,
       latest_consumption: 0,
+    }
+  }
+}
+
+const loadStats = async () => {
+  loading.value = true
+  await loadStatsSilent()
+  loading.value = false
+}
+
+onMounted(async () => {
+  try {
+    await vehiclesStore.fetchVehicles()
+    if (vehiclesStore.currentVehicle) {
+      vehiclePickerValue.value = [vehiclesStore.currentVehicle.id]
+    }
+    await loadStats()
+    isInitialized.value = true
+  } catch (error) {
+    console.error('初始化失败:', error)
+  }
+})
+
+watch(() => vehiclesStore.currentVehicleId, (newId) => {
+  if (newId && isInitialized.value) {
+    vehiclePickerValue.value = [newId]
+    loadStatsSilent() // 车辆切换时静默刷新
+  }
+})
     }
     monthlyStats.value = []
   } finally {

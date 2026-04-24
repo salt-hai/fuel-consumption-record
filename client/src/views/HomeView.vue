@@ -25,6 +25,7 @@ const stats = ref({
 
 const trendData = ref<Array<{ date: string; consumption: number }>>([])
 const loading = ref(false)
+const isInitialized = ref(false)
 const showVehiclePicker = ref(false)
 const vehiclePickerValue = ref<number[]>([])
 
@@ -35,10 +36,10 @@ const vehicleColumns = computed(() => {
   }))
 })
 
-const loadStats = async () => {
+// 静默刷新（不显示 loading）
+const loadStatsSilent = async () => {
   if (!currentVehicle.value) return
 
-  loading.value = true
   try {
     const [summary, trend] = await Promise.all([
       statsApi.getStatsSummary({ vehicle_id: currentVehicle.value.id }).catch(() => null),
@@ -59,9 +60,15 @@ const loadStats = async () => {
     })
   } catch (error) {
     console.error('加载统计数据失败:', error)
-  } finally {
-    loading.value = false
   }
+}
+
+const loadStats = async () => {
+  if (!currentVehicle.value) return
+
+  loading.value = true
+  await loadStatsSilent()
+  loading.value = false
 }
 
 onMounted(async () => {
@@ -70,6 +77,7 @@ onMounted(async () => {
     if (currentVehicle.value) {
       vehiclePickerValue.value = [currentVehicle.value.id]
       await loadStats()
+      isInitialized.value = true
     }
   } catch (error) {
     console.error('初始化失败:', error)
@@ -77,9 +85,9 @@ onMounted(async () => {
 })
 
 watch(() => currentVehicle.value?.id, (newId) => {
-  if (newId) {
+  if (newId && isInitialized.value) {
     vehiclePickerValue.value = [newId]
-    loadStats()
+    loadStatsSilent() // 车辆切换时静默刷新
   }
 })
 
