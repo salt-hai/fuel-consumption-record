@@ -1,10 +1,11 @@
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig, type AxiosResponse } from 'axios'
+import type { AxiosRequestConfig } from 'axios'
 
 // API 基础配置
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
-// 创建 axios 实例
-const api: AxiosInstance = axios.create({
+// 原始 axios 实例
+const rawInstance: AxiosInstance = axios.create({
   baseURL: BASE_URL,
   timeout: 15000,
   headers: {
@@ -13,7 +14,7 @@ const api: AxiosInstance = axios.create({
 })
 
 // 请求拦截器 - 添加 token
-api.interceptors.request.use(
+rawInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = localStorage.getItem('auth_token')
     if (token && config.headers) {
@@ -27,7 +28,7 @@ api.interceptors.request.use(
 )
 
 // 响应拦截器 - 统一处理响应和错误
-api.interceptors.response.use(
+rawInstance.interceptors.response.use(
   (response: AxiosResponse) => {
     // 后端返回格式: {code: 0, message: "xxx", data: {...}}
     // 解包返回 data 字段
@@ -57,5 +58,22 @@ api.interceptors.response.use(
     return Promise.reject('网络错误，请稍后重试')
   }
 )
+
+// 类型安全的 API 客户端
+interface ApiClient {
+  get<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>
+  post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>
+  put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>
+  delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>
+  patch<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>
+}
+
+const api: ApiClient = {
+  get: (url, config) => rawInstance.get(url, config),
+  post: (url, data, config) => rawInstance.post(url, data, config),
+  put: (url, data, config) => rawInstance.put(url, data, config),
+  delete: (url, config) => rawInstance.delete(url, config),
+  patch: (url, data, config) => rawInstance.patch(url, data, config),
+}
 
 export default api

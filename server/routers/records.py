@@ -129,8 +129,8 @@ async def create_record(data: RecordCreate, db: AsyncSession = Depends(get_db)):
 
     record = FuelRecord(**data.model_dump())
 
-    # 自动计算单价 (元/升)
-    if record.volume > 0:
+    # 如果没有提供单价，自动计算 (元/升)
+    if record.unit_price is None and record.volume > 0:
         record.unit_price = round(record.total_cost / record.volume, 2)
 
     # 计算油耗（累积法）
@@ -159,15 +159,13 @@ async def update_record(
 
     update_data = data.model_dump(exclude_unset=True)
 
-    # 检查是否需要重新计算单价
-    should_recalc_price = False
-    if 'volume' in update_data or 'total_cost' in update_data:
-        should_recalc_price = True
+    # 检查是否修改了 volume 或 total_cost，且没有提供新的 unit_price
+    should_recalc_price = ('volume' in update_data or 'total_cost' in update_data) and 'unit_price' not in update_data
 
     for key, value in update_data.items():
         setattr(record, key, value)
 
-    # 自动重新计算单价
+    # 如果修改了 volume 或 total_cost 且没有提供新单价，则自动计算
     if should_recalc_price and record.volume > 0:
         record.unit_price = round(record.total_cost / record.volume, 2)
 

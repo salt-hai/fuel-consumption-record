@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 
 const router = useRouter()
+const route = useRoute()
 
 const tabs = [
   { name: '首页', path: '/', icon: 'home-o' },
@@ -13,15 +14,25 @@ const tabs = [
 
 const activeTab = ref(0)
 
-watch(() => router.currentRoute.value.path, (path) => {
-  const index = tabs.findIndex(t => path.startsWith(t.path))
+// 根据当前路由更新激活的 tab
+const updateActiveTab = () => {
+  const path = route.path
+  const index = tabs.findIndex(t => path === t.path || path.startsWith(t.path + '/'))
   if (index !== -1) {
     activeTab.value = index
   }
-}, { immediate: true })
+}
 
+// 监听路由变化
+watch(() => route.path, updateActiveTab, { immediate: true })
+
+// 处理 tab 切换
 const onTabChange = (index: number) => {
-  router.push(tabs[index].path)
+  const targetPath = tabs[index].path
+  // 如果当前路径已经匹配目标路径，不重复跳转
+  if (route.path !== targetPath && !route.path.startsWith(targetPath + '/')) {
+    router.push(targetPath)
+  }
 }
 </script>
 

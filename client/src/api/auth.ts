@@ -37,15 +37,15 @@ export const login = (data: LoginRequest) => {
 
 // 修改密码
 export const changePassword = (data: ChangePasswordRequest) => {
-  return api.put('/v1/auth/password/', data)
+  return api.put('/v1/auth/password', data)
 }
 
 // 退出登录
 export const logout = () => {
-  return api.delete('/v1/auth/logout/')
+  return api.delete('/v1/auth/logout')
 }
 
 // 获取当前用户
 export const getCurrentUser = () => {
-  return api.get('/v1/auth/me/')
+  return api.get('/v1/auth/me')
 }

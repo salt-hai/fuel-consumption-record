@@ -26,10 +26,14 @@ const stats = ref({
 const trendData = ref<Array<{ date: string; consumption: number }>>([])
 const loading = ref(false)
 const showVehiclePicker = ref(false)
+const vehiclePickerValue = ref<number[]>([])
 
 // 安全地获取车辆选项
 const vehicleColumns = computed(() => {
-  return (vehiclesStore.vehicles || []).map(v => ({ text: v.name, value: v.id }))
+  return (vehiclesStore.vehicles || []).map(v => ({
+    text: `${v.icon} ${v.name}`,
+    value: v.id
+  }))
 })
 
 const loadStats = async () => {
@@ -74,6 +78,7 @@ onMounted(async () => {
   try {
     await vehiclesStore.fetchVehicles()
     if (currentVehicle.value) {
+      vehiclePickerValue.value = [currentVehicle.value.id]
       await loadStats()
     }
   } catch (error) {
@@ -81,12 +86,16 @@ onMounted(async () => {
   }
 })
 
-watch(() => currentVehicle.value?.id, () => {
-  loadStats()
+watch(() => currentVehicle.value?.id, (newId) => {
+  if (newId) {
+    vehiclePickerValue.value = [newId]
+    loadStats()
+  }
 })
 
-const onSelectVehicle = (val: any) => {
-  vehiclesStore.setCurrentVehicle(val.value)
+const onSelectVehicle = ({ selectedValues }: any) => {
+  vehiclesStore.setCurrentVehicle(selectedValues[0])
+  vehiclePickerValue.value = selectedValues
   showVehiclePicker.value = false
 }
 </script>
@@ -96,7 +105,7 @@ const onSelectVehicle = (val: any) => {
     <!-- 头部车辆选择 -->
     <van-sticky>
       <van-nav-bar
-        :title="currentVehicle?.name || '选择车辆'"
+        :title="`${currentVehicle?.icon || ''} ${currentVehicle?.name || '选择车辆'}`"
         @click-right="showVehiclePicker = true"
       >
         <template #right>
@@ -186,6 +195,7 @@ const onSelectVehicle = (val: any) => {
     <!-- 车辆选择弹窗 -->
     <van-popup v-model:show="showVehiclePicker" position="bottom">
       <van-picker
+        :model-value="vehiclePickerValue"
         :columns="vehicleColumns"
         @confirm="onSelectVehicle"
         @cancel="showVehiclePicker = false"
@@ -226,7 +236,8 @@ const onSelectVehicle = (val: any) => {
 
 .chart-container {
   height: 200px;
-  padding: 16px;
+  padding: 12px;
+  overflow: hidden;
 }
 
 .record-value {

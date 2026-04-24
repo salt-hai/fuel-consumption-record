@@ -6,7 +6,7 @@ from database import get_db
 from models.fuel_record import FuelRecord
 from schemas.common import success_response
 
-router = APIRouter(prefix="/v1/records/stats", tags=["统计分析"])
+router = APIRouter(prefix="/v1/stats", tags=["统计分析"])
 
 @router.get("/summary/")
 async def get_summary(

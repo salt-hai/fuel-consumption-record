@@ -4,6 +4,7 @@ from typing import Optional
 
 class VehicleCreate(BaseModel):
     name: str = Field(..., description="车辆名称")
+    icon: str = Field("🚗", description="车辆图标")
     brand: Optional[str] = Field(None, description="品牌")
     model: Optional[str] = Field(None, description="型号")
     plate_number: Optional[str] = Field(None, description="车牌号")
@@ -12,6 +13,7 @@ class VehicleCreate(BaseModel):
 
 class VehicleUpdate(BaseModel):
     name: Optional[str] = None
+    icon: Optional[str] = Field(None, description="车辆图标")
     brand: Optional[str] = None
     model: Optional[str] = None
     plate_number: Optional[str] = None
@@ -22,6 +24,7 @@ class VehicleUpdate(BaseModel):
 class VehicleResponse(BaseModel):
     id: int
     name: str
+    icon: str
     brand: Optional[str]
     model: Optional[str]
     plate_number: Optional[str]

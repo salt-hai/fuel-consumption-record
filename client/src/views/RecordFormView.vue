@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useRecordsStore } from '@/stores/records'
 import { useVehiclesStore } from '@/stores/vehicles'
@@ -20,6 +20,7 @@ const formData = ref({
   odometer: 0,
   volume: 0,
   total_cost: 0,
+  unit_price: 0,
   full_tank: true,
   gas_station: '',
   notes: '',
@@ -31,18 +32,41 @@ const submitting = ref(false)
 const showVehiclePicker = ref(false)
 const showDatePicker = ref(false)
 const currentDateValue = ref<string[]>(formData.value.date.split('-'))
+const vehiclePickerValue = ref<number[]>([])
+const vehicleDisplayValue = ref('点击选择车辆')
+const dateDisplayValue = ref(formData.value.date)
+const unitPriceDisplay = ref('0.00')
 
-// 计算单价 (只读)
-const calculatedUnitPrice = computed(() => {
-  if (formData.value.volume > 0) {
-    return (formData.value.total_cost / formData.value.volume).toFixed(2)
+// 计算单价（当用户修改加油量或总金额时自动计算）
+watch(() => [formData.value.volume, formData.value.total_cost], ([newVolume, newCost]) => {
+  if (newVolume > 0 && newCost > 0) {
+    unitPriceDisplay.value = (newCost / newVolume).toFixed(2)
+    formData.value.unit_price = parseFloat(unitPriceDisplay.value)
+  } else {
+    unitPriceDisplay.value = '0.00'
+    formData.value.unit_price = 0
   }
-  return '0.00'
+}, { immediate: true })
+
+// 监听单价手动输入，更新 formData
+watch(() => unitPriceDisplay.value, (newVal) => {
+  const parsed = parseFloat(newVal)
+  if (!isNaN(parsed)) {
+    formData.value.unit_price = parsed
+  }
 })
 
-const onDateConfirm = (val: any) => {
-  formData.value.date = val.selectedValues.join('-')
+const onDateConfirm = ({ selectedValues }: any) => {
+  formData.value.date = selectedValues.join('-')
+  currentDateValue.value = selectedValues
+  dateDisplayValue.value = selectedValues.join('-')
   showDatePicker.value = false
+}
+
+// 更新车辆显示名称
+const updateVehicleDisplay = () => {
+  const vehicle = (vehiclesStore.vehicles || []).find(v => v.id === formData.value.vehicle_id)
+  vehicleDisplayValue.value = vehicle ? `${vehicle.icon} ${vehicle.name}` : '点击选择车辆'
 }
 
 onMounted(async () => {
@@ -50,7 +74,9 @@ onMounted(async () => {
 
   if (vehiclesStore.currentVehicle) {
     formData.value.vehicle_id = vehiclesStore.currentVehicle.id
+    vehiclePickerValue.value = [vehiclesStore.currentVehicle.id]
   }
+  updateVehicleDisplay()
 
   if (isEdit.value) {
     await loadRecord()
@@ -74,10 +100,16 @@ const loadRecord = async () => {
       odometer: record.odometer,
       volume: record.volume,
       total_cost: record.total_cost,
+      unit_price: record.unit_price || 0,
       full_tank: record.full_tank,
       gas_station: record.gas_station || '',
       notes: record.notes || '',
     }
+    vehiclePickerValue.value = [record.vehicle_id]
+    currentDateValue.value = record.date.split('-')
+    dateDisplayValue.value = record.date
+    unitPriceDisplay.value = (record.unit_price || 0).toFixed(2)
+    updateVehicleDisplay()
   } finally {
     loading.value = false
   }
@@ -116,19 +148,18 @@ const onSubmit = async () => {
   }
 }
 
-const vehicleName = computed(() => {
-  const vehicle = (vehiclesStore.vehicles || []).find(v => v.id === formData.value.vehicle_id)
-  return vehicle?.name || '点击选择车辆'
-})
-
-// 安全地获取车辆选项
 const vehicleColumns = computed(() => {
-  return (vehiclesStore.vehicles || []).map(v => ({ text: v.name, value: v.id }))
+  return (vehiclesStore.vehicles || []).map(v => ({
+    text: `${v.icon} ${v.name}`,
+    value: v.id
+  }))
 })
 
-const onSelectVehicle = (id: number) => {
-  formData.value.vehicle_id = id
+const onSelectVehicle = ({ selectedValues, selectedOptions }: any) => {
+  formData.value.vehicle_id = selectedValues[0]
+  vehiclePickerValue.value = selectedValues
   showVehiclePicker.value = false
+  updateVehicleDisplay()
 }
 </script>
 
@@ -143,20 +174,22 @@ const onSelectVehicle = (id: number) => {
     <van-form @submit="onSubmit">
       <van-cell-group inset>
         <van-field
-          :value="vehicleName"
+          v-model="vehicleDisplayValue"
           label="车辆"
           placeholder="点击选择车辆"
           readonly
           is-link
+          required
           @click="showVehiclePicker = true"
         />
 
         <van-field
-          :value="formData.date"
+          v-model="dateDisplayValue"
           label="日期"
           placeholder="请选择日期"
           readonly
           is-link
+          required
           @click="showDatePicker = true"
         />
 
@@ -165,11 +198,13 @@ const onSelectVehicle = (id: number) => {
           type="number"
           label="当前里程"
           placeholder="请输入里程"
+          suffix="km"
+          required
           :rules="[{ required: true, message: '请输入里程' }]"
         >
           <template #extra>
             <span v-if="!isEdit && lastOdometer > 0" class="hint">
-              上次: {{ lastOdometer }}
+              上次: {{ lastOdometer }} km
             </span>
           </template>
         </van-field>
@@ -180,6 +215,7 @@ const onSelectVehicle = (id: number) => {
           label="加油量"
           placeholder="请输入加油量"
           suffix="L"
+          required
           :rules="[{ required: true, message: '请输入加油量' }]"
         />
 
@@ -189,15 +225,16 @@ const onSelectVehicle = (id: number) => {
           label="总金额"
           placeholder="请输入总金额"
           suffix="元"
+          required
           :rules="[{ required: true, message: '请输入总金额' }]"
         />
 
         <van-field
-          :value="calculatedUnitPrice"
+          v-model.number="unitPriceDisplay"
+          type="number"
           label="单价"
-          placeholder="自动计算"
+          placeholder="自动计算或手动输入"
           suffix="元/L"
-          readonly
         />
 
         <van-field name="full_tank" label="是否加满">
@@ -223,6 +260,39 @@ const onSelectVehicle = (id: number) => {
         />
       </van-cell-group>
 
+      <!-- 油耗计算说明 -->
+      <van-cell-group inset class="info-section">
+        <van-cell title="油耗计算说明" :border="false">
+          <template #icon>
+            <van-icon name="info-o" class="info-icon" />
+          </template>
+        </van-cell>
+        <van-cell :border="false">
+          <template #title>
+            <div class="calc-info">
+              <p><strong>计算公式：</strong></p>
+              <p class="formula">油耗(L/100km) = 累积加油量 ÷ 累积里程 × 100</p>
+              <p><strong>计算方式：</strong></p>
+              <ul class="example">
+                <li>从<strong>上次加满</strong>到<strong>本次加满</strong>作为一个完整周期</li>
+                <li><strong>累积加油量</strong> = 中间所有加油量 + 本次加油量</li>
+                <li><strong>累积里程</strong> = 本次里程 - 上次加满时里程</li>
+              </ul>
+              <p><strong>举例：</strong></p>
+              <div class="example-box">
+                <p>📝 第1次加满：里程 1000km，加油 40L</p>
+                <p>📝 第2次（未满）：里程 1200km，加油 30L</p>
+                <p>📝 第3次加满：里程 1600km，加油 45L</p>
+                <p class="result">📊 计算：</p>
+                <p class="result">• 累积加油量 = 30L + 45L = 75L</p>
+                <p class="result">• 累积里程 = 1600km - 1000km = 600km</p>
+                <p class="result highlight">• 油耗 = 75 ÷ 600 × 100 = <strong>12.5L/100km</strong></p>
+              </div>
+            </div>
+          </template>
+        </van-cell>
+      </van-cell-group>
+
       <div class="submit-section">
         <van-button
           round
@@ -239,15 +309,16 @@ const onSelectVehicle = (id: number) => {
     <!-- 车辆选择弹窗 -->
     <van-popup v-model:show="showVehiclePicker" position="bottom">
       <van-picker
+        :model-value="vehiclePickerValue"
         :columns="vehicleColumns"
-        @confirm="(val: any) => onSelectVehicle(val.value)"
+        @confirm="onSelectVehicle"
         @cancel="showVehiclePicker = false"
       />
     </van-popup>
 
     <van-popup v-model:show="showDatePicker" position="bottom">
       <van-date-picker
-        v-model="currentDateValue"
+        :model-value="currentDateValue"
         :min-date="new Date(2020, 0, 1)"
         :max-date="new Date()"
         @confirm="onDateConfirm"
@@ -271,5 +342,68 @@ const onSelectVehicle = (id: number) => {
 .hint {
   font-size: 12px;
   color: #9ca3af;
+}
+
+.info-section {
+  margin: 16px;
+}
+
+.info-icon {
+  margin-right: 8px;
+  color: #1989fa;
+  font-size: 18px;
+}
+
+.calc-info {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #323233;
+}
+
+.calc-info p {
+  margin: 8px 0;
+}
+
+.formula {
+  background: #f0f9ff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: #1989fa;
+  font-family: monospace;
+  text-align: center;
+  margin: 8px 0;
+}
+
+.example {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.example li {
+  margin: 4px 0;
+}
+
+.example-box {
+  background: #fafafa;
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 8px;
+}
+
+.example-box p {
+  margin: 6px 0;
+  font-size: 12px;
+}
+
+.result {
+  padding-left: 16px;
+  color: #646566;
+}
+
+.result.highlight {
+  color: #1989fa;
+  font-weight: bold;
+  font-size: 14px;
+  margin-top: 8px;
 }
 </style>

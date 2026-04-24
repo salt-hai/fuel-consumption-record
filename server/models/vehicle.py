@@ -7,6 +7,7 @@ class Vehicle(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
+    icon = Column(String, default="🚗")
     brand = Column(String)
     model = Column(String)
     plate_number = Column(String, unique=True)

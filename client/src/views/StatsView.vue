@@ -214,7 +214,8 @@ const onSelectPeriod = (val: any) => {
 
 .chart-container {
   height: 220px;
-  padding: 16px;
+  padding: 12px;
+  overflow: hidden;
 }
 
 .empty-state {

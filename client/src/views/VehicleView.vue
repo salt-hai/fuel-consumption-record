@@ -1,24 +1,35 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useVehiclesStore } from '@/stores/vehicles'
 import { showToast, showConfirmDialog } from 'vant'
 import type { Vehicle } from '@/api/vehicles'
+import { VEHICLE_ICONS } from '@/api/vehicles'
 
 const router = useRouter()
 const vehiclesStore = useVehiclesStore()
 
 const showAddDialog = ref(false)
 const showEditDialog = ref(false)
+const showIconPicker = ref(false)
 const editingVehicle = ref<Vehicle | null>(null)
 
 const newVehicle = ref({
   name: '',
+  icon: '🚗',
   brand: '',
   model: '',
   plate_number: '',
   initial_odometer: 0,
   fuel_type: '92号汽油',
+})
+
+const iconColumns = computed(() => {
+  const cols = []
+  for (let i = 0; i < VEHICLE_ICONS.length; i += 4) {
+    cols.push(VEHICLE_ICONS.slice(i, i + 4))
+  }
+  return cols
 })
 
 onMounted(async () => {
@@ -28,6 +39,7 @@ onMounted(async () => {
 const onAdd = () => {
   newVehicle.value = {
     name: '',
+    icon: '🚗',
     brand: '',
     model: '',
     plate_number: '',
@@ -41,6 +53,7 @@ const onEdit = (vehicle: Vehicle) => {
   editingVehicle.value = vehicle
   newVehicle.value = {
     name: vehicle.name,
+    icon: vehicle.icon,
     brand: vehicle.brand || '',
     model: vehicle.model || '',
     plate_number: vehicle.plate_number || '',
@@ -57,6 +70,11 @@ const onDelete = async (vehicle: Vehicle) => {
   })
   await vehiclesStore.deleteVehicle(vehicle.id)
   showToast({ message: '已删除', type: 'success' })
+}
+
+const onIconSelect = (icon: string) => {
+  newVehicle.value.icon = icon
+  showIconPicker.value = false
 }
 
 const onSubmitAdd = async () => {
@@ -96,7 +114,7 @@ const onSubmitEdit = async () => {
       <van-card
         v-for="vehicle in vehiclesStore.vehicles"
         :key="vehicle.id"
-        :title="vehicle.name"
+        :title="`${vehicle.icon} ${vehicle.name}`"
         :desc="`${vehicle.brand || ''} ${vehicle.model || ''}`"
       >
         <template #tags>
@@ -121,6 +139,17 @@ const onSubmitEdit = async () => {
       <div class="dialog-content">
         <h3>添加车辆</h3>
         <van-form @submit="onSubmitAdd">
+          <van-field
+            v-model="newVehicle.icon"
+            label="图标"
+            readonly
+            is-link
+            @click="showIconPicker = true"
+          >
+            <template #input>
+              <span class="icon-preview">{{ newVehicle.icon }}</span>
+            </template>
+          </van-field>
           <van-field
             v-model="newVehicle.name"
             label="车辆名称"
@@ -170,6 +199,17 @@ const onSubmitEdit = async () => {
         <h3>编辑车辆</h3>
         <van-form @submit="onSubmitEdit">
           <van-field
+            v-model="newVehicle.icon"
+            label="图标"
+            readonly
+            is-link
+            @click="showIconPicker = true"
+          >
+            <template #input>
+              <span class="icon-preview">{{ newVehicle.icon }}</span>
+            </template>
+          </van-field>
+          <van-field
             v-model="newVehicle.name"
             label="车辆名称"
             placeholder="如：我的卡罗拉"
@@ -211,6 +251,27 @@ const onSubmitEdit = async () => {
         </van-form>
       </div>
     </van-popup>
+
+    <!-- 图标选择弹窗 -->
+    <van-popup v-model:show="showIconPicker" position="bottom" round>
+      <div class="icon-picker-content">
+        <h3>选择图标</h3>
+        <div class="icon-grid">
+          <div
+            v-for="icon in VEHICLE_ICONS"
+            :key="icon"
+            class="icon-item"
+            :class="{ selected: newVehicle.icon === icon }"
+            @click="onIconSelect(icon)"
+          >
+            {{ icon }}
+          </div>
+        </div>
+        <van-button round block @click="showIconPicker = false">
+          取消
+        </van-button>
+      </div>
+    </van-popup>
   </div>
 </template>
 
@@ -241,5 +302,47 @@ const onSubmitEdit = async () => {
 
 .dialog-content .van-button {
   margin-top: 8px;
+}
+
+.icon-preview {
+  font-size: 24px;
+}
+
+.icon-picker-content {
+  padding: 20px;
+}
+
+.icon-picker-content h3 {
+  margin: 0 0 16px 0;
+  text-align: center;
+}
+
+.icon-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.icon-item {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.icon-item.selected {
+  background-color: #1989fa;
+  border-color: #1989fa;
+  color: white;
+}
+
+.icon-item:active {
+  transform: scale(0.95);
 }
 </style>
