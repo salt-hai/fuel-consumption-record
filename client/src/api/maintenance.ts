@@ -24,7 +24,7 @@ export interface UpdateMaintenanceRequest extends Partial<CreateMaintenanceReque
 
 // 获取保养记录列表
 export const getMaintenanceRecords = (vehicle_id: number) => {
-  return api.get<MaintenanceRecord[]>('/v1/maintenance', { params: { vehicle_id } })
+  return api.get<MaintenanceRecord[]>('/v1/maintenance/', { params: { vehicle_id } })
 }
 
 // 获取即将到期的保养
@@ -34,7 +34,7 @@ export const getUpcomingMaintenance = (vehicle_id: number) => {
 
 // 创建保养记录
 export const createMaintenanceRecord = (data: CreateMaintenanceRequest) => {
-  return api.post<MaintenanceRecord>('/v1/maintenance', data)
+  return api.post<MaintenanceRecord>('/v1/maintenance/', data)
 }
 
 // 更新保养记录
