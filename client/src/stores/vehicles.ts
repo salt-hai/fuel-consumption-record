@@ -13,7 +13,13 @@ export const useVehiclesStore = defineStore('vehicles', () => {
   const currentVehicle = computed(() => {
     const vehiclesList = vehicles.value || []
     if (!currentVehicleId.value) return vehiclesList[0] || null
-    return vehiclesList.find((v) => v.id === currentVehicleId.value) || null
+
+    // 如果当前选中的车辆不存在于列表中，返回第一个车辆
+    const vehicle = vehiclesList.find((v) => v.id === currentVehicleId.value)
+    if (!vehicle && vehiclesList.length > 0) {
+      return vehiclesList[0]
+    }
+    return vehicle || null
   })
 
   const activeVehicles = computed(() =>
@@ -37,8 +43,11 @@ export const useVehiclesStore = defineStore('vehicles', () => {
         vehicles.value = []
       }
 
-      // 如果没有当前选中的车辆，默认选中第一个
-      if (!currentVehicleId.value && activeVehicles.value.length > 0) {
+      // 验证当前选中车辆是否有效
+      const isValidVehicle = currentVehicleId.value && vehicles.value.some(v => v.id === currentVehicleId.value)
+
+      // 如果没有选中车辆，或选中的车辆不存在，选中第一个活跃车辆
+      if (!isValidVehicle && activeVehicles.value.length > 0) {
         currentVehicleId.value = activeVehicles.value[0].id
         saveCurrentVehicleId()
       }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useRecordsStore } from '@/stores/records'
 import { useVehiclesStore } from '@/stores/vehicles'
@@ -14,6 +14,23 @@ const loading = ref(false)
 const finished = ref(false)
 
 const records = computed(() => recordsStore.records)
+const currentVehicle = computed(() => vehiclesStore.currentVehicle)
+
+const showVehiclePicker = ref(false)
+const vehiclePickerValue = ref<number[]>([])
+
+const vehicleColumns = computed(() => {
+  return (vehiclesStore.vehicles || []).map(v => ({
+    text: `${v.icon} ${v.name}`,
+    value: v.id
+  }))
+})
+
+// 打开车辆选择器
+const openVehiclePicker = () => {
+  vehiclePickerValue.value = [vehiclesStore.currentVehicleId || vehiclesStore.vehicles?.[0]?.id || 0]
+  showVehiclePicker.value = true
+}
 
 // 计算里程增量
 const getOdometerDelta = (index: number) => {
@@ -31,6 +48,12 @@ const getConsumptionLevel = (consumption: number) => {
 }
 
 onMounted(async () => {
+  await vehiclesStore.fetchVehicles()
+  await onRefresh()
+})
+
+// 监听车辆切换
+watch(() => vehiclesStore.currentVehicleId, async () => {
   await onRefresh()
 })
 
@@ -65,11 +88,29 @@ const onAdd = () => {
 const onEdit = (id: number) => {
   router.push(`/records/${id}/edit`)
 }
+
+// 切换车辆
+const onVehicleSelect = ({ selectedValues }: { selectedValues: number[] }) => {
+  const vehicleId = selectedValues[0]
+  if (vehicleId) {
+    vehiclesStore.setCurrentVehicle(vehicleId)
+    onRefresh()
+  }
+  showVehiclePicker.value = false
+}
 </script>
 
 <template>
   <div class="records-page">
-    <van-nav-bar title="加油记录" />
+    <van-nav-bar title="加油记录">
+      <template #right>
+        <div v-if="currentVehicle" class="nav-vehicle" @click="openVehiclePicker">
+          <span class="vehicle-icon">{{ currentVehicle.icon }}</span>
+          <span class="vehicle-name">{{ currentVehicle.name }}</span>
+          <van-icon name="arrow-down" size="12" />
+        </div>
+      </template>
+    </van-nav-bar>
 
     <van-pull-refresh v-model="loading" @refresh="onRefresh">
       <!-- 空状态 -->
@@ -155,6 +196,16 @@ const onEdit = (id: number) => {
       class="fab-button"
       @click="onAdd"
     />
+
+    <!-- 车辆选择器 -->
+    <van-popup v-model:show="showVehiclePicker" position="bottom" round>
+      <van-picker
+        :columns="vehicleColumns"
+        :model-value="vehiclePickerValue"
+        @confirm="onVehicleSelect"
+        @cancel="showVehiclePicker = false"
+      />
+    </van-popup>
   </div>
 </template>
 
@@ -163,6 +214,27 @@ const onEdit = (id: number) => {
   min-height: 100vh;
   background-color: #f7f8fa;
   padding-bottom: 80px;
+}
+
+/* 导航栏车辆选择 */
+.nav-vehicle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  color: #323233;
+  cursor: pointer;
+}
+
+.vehicle-icon {
+  font-size: 16px;
+}
+
+.vehicle-name {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* 空状态 */
