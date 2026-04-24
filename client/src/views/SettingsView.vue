@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useVehiclesStore } from '@/stores/vehicles'
-import { showToast, showConfirmDialog, showDialog } from 'vant'
+import { showToast, showDialog } from 'vant'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -19,6 +19,7 @@ const userInitial = computed(() => userName.value.charAt(0).toUpperCase())
 const vehicleCount = computed(() => (vehiclesStore.vehicles || []).length)
 
 const showPasswordDialog = ref(false)
+const showLogoutDialog = ref(false)
 const passwordForm = ref({
   old_password: '',
   new_password: '',
@@ -54,14 +55,13 @@ const onChangePassword = async () => {
   }
 }
 
-const onLogout = async () => {
-  await showConfirmDialog({
-    title: '确认退出',
-    message: '确定要退出登录吗？',
-    confirmButtonText: '退出',
-    confirmButtonColor: '#ee0a24',
-  })
+const onLogout = () => {
+  showLogoutDialog.value = true
+}
+
+const confirmLogout = async () => {
   await authStore.logout()
+  showLogoutDialog.value = false
   router.push('/login')
 }
 
@@ -123,7 +123,7 @@ const onAbout = () => {
       <van-cell
         title="退出登录"
         is-link
-        @click="onLogout"
+        @click="showLogoutDialog = true"
       />
     </van-cell-group>
 
@@ -186,6 +186,27 @@ const onAbout = () => {
             </van-button>
           </div>
         </van-form>
+      </div>
+    </van-popup>
+
+    <!-- 退出登录弹窗 -->
+    <van-popup v-model:show="showLogoutDialog" position="bottom" round>
+      <div class="popup-content">
+        <div class="popup-header">
+          <h3>确认退出</h3>
+          <van-icon name="cross" @click="showLogoutDialog = false" />
+        </div>
+        <div class="popup-form">
+          <p class="confirm-message">确定要退出登录吗？</p>
+          <div class="popup-actions">
+            <van-button round block @click="showLogoutDialog = false">
+              取消
+            </van-button>
+            <van-button round block type="danger" @click="confirmLogout">
+              退出
+            </van-button>
+          </div>
+        </div>
       </div>
     </van-popup>
   </div>
@@ -315,5 +336,17 @@ const onAbout = () => {
 :deep(.van-button--primary) {
   background: linear-gradient(135deg, #1989fa 0%, #096dd9 100%);
   border: none;
+}
+
+:deep(.van-button--danger) {
+  background: linear-gradient(135deg, #ee0a24 0%, #c41d30 100%);
+  border: none;
+}
+
+.confirm-message {
+  margin: 20px 0;
+  font-size: 15px;
+  color: #323233;
+  text-align: center;
 }
 </style>
