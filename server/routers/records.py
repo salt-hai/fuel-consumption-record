@@ -77,6 +77,44 @@ async def calculate_fuel_consumption(
     # 计算油耗
     return (total_volume / distance) * 100
 
+
+async def recalculate_next_full_tank(
+    db: AsyncSession,
+    vehicle_id: int,
+    current_odometer: int
+) -> None:
+    """
+    重新计算下一条加满记录的油耗
+
+    当修改记录的 full_tank/odometer/volume 时，会影响下一条加满记录的油耗计算。
+    此函数找到下一条加满记录并重新计算其油耗。
+
+    Args:
+        db: 数据库会话
+        vehicle_id: 车辆 ID
+        current_odometer: 当前记录的里程（用于查找下一条加满记录）
+    """
+    # 查找下一条加满的记录
+    result = await db.execute(
+        select(FuelRecord)
+        .where(
+            and_(
+                FuelRecord.vehicle_id == vehicle_id,
+                FuelRecord.full_tank == True,
+                FuelRecord.odometer > current_odometer
+            )
+        )
+        .order_by(FuelRecord.odometer.asc())
+        .limit(1)
+    )
+    next_record = result.scalar_one_or_none()
+
+    if next_record:
+        # 重新计算油耗
+        next_record.fuel_consumption = await calculate_fuel_consumption(
+            db, vehicle_id, next_record.odometer, next_record.volume
+        )
+
 async def validate_vehicle_for_user(vehicle_id: int, user: User, db: AsyncSession) -> Vehicle:
     """验证车辆属于当前用户"""
     result = await db.execute(
@@ -180,6 +218,12 @@ async def update_record(
     # 检查是否修改了 volume 或 total_cost，且没有提供新的 unit_price
     should_recalc_price = ('volume' in update_data or 'total_cost' in update_data) and 'unit_price' not in update_data
 
+    # 检查是否需要级联更新下一条加满记录的油耗
+    affects_next_calculation = any(key in update_data for key in ('full_tank', 'odometer', 'volume'))
+
+    # 保存原始值用于级联判断
+    original_odometer = record.odometer
+
     for key, value in update_data.items():
         setattr(record, key, value)
 
@@ -187,11 +231,18 @@ async def update_record(
     if should_recalc_price and record.volume > 0:
         record.unit_price = round(record.total_cost / record.volume, 2)
 
-    # 重新计算油耗（累积法）
+    # 重新计算当前记录油耗（累积法）
     if record.full_tank:
         record.fuel_consumption = await calculate_fuel_consumption(
             db, record.vehicle_id, record.odometer, record.volume
         )
+    else:
+        # 如果改为非加满，清除油耗
+        record.fuel_consumption = None
+
+    # 级联更新下一条加满记录的油耗
+    if affects_next_calculation:
+        await recalculate_next_full_tank(db, record.vehicle_id, original_odometer)
 
     await db.commit()
     await db.refresh(record)
@@ -207,7 +258,15 @@ async def delete_record(
     """删除记录（只能删除自己的记录）"""
     record = await get_user_record(record_id, current_user, db)
 
+    # 保存信息用于级联更新
+    vehicle_id = record.vehicle_id
+    odometer = record.odometer
+
     await db.delete(record)
+
+    # 级联更新下一条加满记录的油耗
+    await recalculate_next_full_tank(db, vehicle_id, odometer)
+
     await db.commit()
 
     return success_response(message="删除成功")
