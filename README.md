@@ -149,10 +149,14 @@ nano .env
 | `REGISTRATION_ENABLED` | `true` | 用户注册 | 建议关闭 `false` |
 | `EXPORT_ENABLED` | `true` | 数据导出 | 保持开启 |
 | `MAINTENANCE_ENABLED` | `true` | 保养提醒 | 保持开启 |
-| `CORS_ENABLED` | `true` | 跨域支持 | 根据需要调整 |
-| `CORS_ORIGINS` | `*` | 允许的源 | 限制为实际域名 |
+| `CORS_ENABLED` | `true` | 跨域支持 | **生产关闭** `false` |
+| `CORS_ORIGINS` | `*` | 允许的源 | 仅开发环境使用 |
 | `DEBUG` | `false` | 调试模式 | 必须关闭 |
 | `MAINTENANCE_MODE` | `false` | 维护模式 | 维护时开启 |
+
+**⚠️ 关于 CORS 配置：**
+- **生产环境不需要**：使用 Nginx 反向代理，前后端同源，设置 `CORS_ENABLED=false`
+- **开发环境需要**：前端 `localhost:5173`，后端 `localhost:8000`，设置 `CORS_ENABLED=true`
 
 ### 生产环境安全配置
 
@@ -172,8 +176,8 @@ CORS_ORIGINS=https://your-domain.com
 - [ ] `SECRET_KEY` 已修改为随机字符串
 - [ ] `REGISTRATION_ENABLED=false`（关闭公开注册）
 - [ ] `DOCS_ENABLED=false`（关闭 API 文档）
+- [ ] `CORS_ENABLED=false`（生产环境不需要 CORS）
 - [ ] `DEBUG=false`（关闭调试模式）
-- [ ] `CORS_ORIGINS` 限制为实际域名
 
 ## 项目结构
 
