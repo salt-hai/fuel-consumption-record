@@ -19,9 +19,9 @@
   /* 中性色 */
   --color-bg-page: #f7f8fa;
   --color-bg-card: #ffffff;
-  --color-text-primary: #323233;
-  --color-text-secondary: #646566;
-  --color-text-tertiary: #969799;
+  --color-text-primary: #1c1c1e;
+  --color-text-secondary: #636366;
+  --color-text-tertiary: #8e8e93;
   --color-border: #ebedf0;
   --color-border-light: #f5f6f7;
 
@@ -43,6 +43,32 @@
   --spacing-lg: 16px;
   --spacing-xl: 20px;
   --spacing-xxl: 32px;
+
+  /* 字体 */
+  --font-family-base: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-family-number: "SF Mono", "Roboto Mono", Consolas, monospace;
+
+  /* 字号 */
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-md: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --font-size-2xl: 20px;
+  --font-size-3xl: 24px;
+
+  /* 字重 */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* 行高 */
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
 }
 
 /* ============ 全局样式 ============ */
@@ -51,16 +77,27 @@
   box-sizing: border-box;
 }
 
+/* 现代系统字体栈 */
+:root {
+  --font-family-base: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-family-number: "SF Mono", "Roboto Mono", Consolas, monospace;
+}
+
 body {
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family: var(--font-family-base);
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.6;
+  letter-spacing: -0.01em;
   color: var(--color-text-primary);
   background-color: var(--color-bg-page);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "liga" 1, "calt" 1;
 }
 
 #app {
@@ -300,4 +337,61 @@ body {
 /* Overlay 遮罩层 */
 .van-overlay {
   background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* ============ 现代排版工具类 ============ */
+/* 字体族 */
+.font-base {
+  font-family: var(--font-family-base);
+}
+
+.font-number {
+  font-family: var(--font-family-number);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 字号 */
+.text-xs { font-size: var(--font-size-xs); }
+.text-sm { font-size: var(--font-size-sm); }
+.text-md { font-size: var(--font-size-md); }
+.text-lg { font-size: var(--font-size-lg); }
+.text-xl { font-size: var(--font-size-xl); }
+.text-2xl { font-size: var(--font-size-2xl); }
+.text-3xl { font-size: var(--font-size-3xl); }
+
+/* 字重 */
+.font-normal { font-weight: var(--font-weight-normal); }
+.font-medium { font-weight: var(--font-weight-medium); }
+.font-semibold { font-weight: var(--font-weight-semibold); }
+.font-bold { font-weight: var(--font-weight-bold); }
+
+/* 行高 */
+.leading-tight { line-height: var(--line-height-tight); }
+.leading-normal { line-height: var(--line-height-normal); }
+.leading-relaxed { line-height: var(--line-height-relaxed); }
+
+/* 数字优化 - 使用等宽数字 */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* 现代字体渲染优化 */
+.text-optimize {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 标题样式 */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: -0.02em;
+  line-height: var(--line-height-tight);
+}
+
+/* 强调文本 */
+.text-emphasized {
+  font-weight: var(--font-weight-medium);
+  letter-spacing: -0.01em;
 }
