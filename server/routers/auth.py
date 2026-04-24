@@ -8,6 +8,7 @@ from models.token import Token
 from schemas.auth import RegisterRequest, LoginRequest, ChangePasswordRequest
 from schemas.common import success_response
 from utils.auth import get_current_user, generate_token, hash_token
+from config import settings
 
 router = APIRouter(prefix="/v1/auth", tags=["认证"])
 
@@ -37,6 +38,13 @@ async def get_token_from_header(authorization: str = Header(None)) -> str:
 @router.post("/register")
 async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)):
     """注册新用户"""
+    # 检查注册功能是否启用
+    if not settings.REGISTRATION_ENABLED:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="注册功能已关闭，请联系管理员开通账户"
+        )
+
     result = await db.execute(select(User).where(User.email == data.email))
     if result.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="该邮箱已被注册")
