@@ -90,8 +90,8 @@ fuel-consumption-record/
 
 ## Key Patterns
 
-- **API**: RESTful, `/api/v1/` prefix. JSON responses with consistent `{code, message, data}` envelope.
-- **Auth**: Simple password-based. Backend stores a hashed password; frontend sends it with each request via `Authorization` header.
+- **API**: RESTful, `/api/` prefix with version `/v1/`. JSON responses with consistent `{code, message, data}` envelope.
+- **Auth**: Email + password login, returns token. Frontend sends token via `Authorization: Bearer <token>` header.
 - **DB Migrations**: Use Alembic for schema changes.
 - **State Management**: Pinia stores, one per domain (vehicles, records, auth).
 - **Mobile-First**: Design for 375px viewport first. Use Vant 4 components for native app feel. Support responsive up to tablet.
@@ -100,20 +100,48 @@ fuel-consumption-record/
 
 ## Core Features
 
-- Fuel records (date, odometer, amount, volume, price, gas station, notes)
-- Fuel consumption calculation (L/100km)
-- Multi-vehicle management
+- Fuel records (date, odometer, amount, volume, price, gas station, notes, full tank flag)
+- Fuel consumption calculation using cumulative method (L/100km)
+- Multi-vehicle management with user isolation
 - Dashboard with charts (ECharts)
-- Maintenance reminders
-- Data export (CSV/Excel)
-- Simple password authentication
+- Maintenance records and reminders
+- Data export (CSV with UTF-8 BOM, Excel with styling)
+- Email/password authentication with token-based sessions
 
 ## API Endpoints
 
-- `POST /api/v1/auth/login` — Verify password, return token
-- `PUT /api/v1/auth/password` — Change password
-- `CRUD /api/v1/vehicles` — Vehicle management
-- `CRUD /api/v1/records` — Fuel records
-- `GET /api/v1/records/stats` — Consumption statistics
-- `GET /api/v1/maintenance` — Maintenance reminders
-- `GET /api/v1/export` — Export data
+**Auth (`/api/v1/auth`)**
+- `POST /register` — Register new user
+- `POST /login` — Email + password login
+- `DELETE /logout/` — Logout (invalidate token)
+- `GET /me/` — Get current user info
+- `PUT /password/` — Change password
+
+**Vehicles (`/api/v1/vehicles`)**
+- `GET /` — List user's vehicles
+- `POST /` — Create vehicle
+- `PUT /{vehicle_id}/` — Update vehicle
+- `DELETE /{vehicle_id}/` — Delete vehicle (and associated records)
+
+**Records (`/api/v1/records`)**
+- `GET /` — List records (paginated, filterable)
+- `GET /{record_id}/` — Get single record
+- `POST /` — Create record
+- `PUT /{record_id}/` — Update record
+- `DELETE /{record_id}/` — Delete record
+
+**Stats (`/api/v1/stats`)**
+- `GET /summary/` — Summary statistics (total cost, distance, avg consumption)
+- `GET /monthly/` — Monthly statistics
+- `GET /trend/` — Consumption trend
+
+**Maintenance (`/api/v1/maintenance`)**
+- `GET ` — List maintenance records
+- `GET /upcoming` — Get upcoming maintenance reminders
+- `POST ` — Create maintenance record
+- `PUT /{record_id}` — Update maintenance record
+- `DELETE /{record_id}` — Delete maintenance record
+
+**Export (`/api/v1/export`)**
+- `GET /csv` — Export as CSV
+- `GET /excel` — Export as Excel
