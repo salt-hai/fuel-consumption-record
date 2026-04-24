@@ -4,15 +4,10 @@
 运行方式：
     python add_user_id_to_vehicles.py
 """
-import asyncio
 import sqlite3
 from pathlib import Path
-from sqlalchemy import text
-from database import engine, Base, async_sessionmaker
-from models.user import User
-from models.vehicle import Vehicle
 
-async def migrate():
+def migrate():
     """执行迁移"""
 
     # 1. 获取数据库路径（可能在 data 目录或 server 目录）
@@ -50,27 +45,106 @@ async def migrate():
         columns = [col[1] for col in cursor.fetchall()]
 
         if 'user_id' in columns:
-            print("[OK] user_id column already exists, skipping")
+            print("[OK] user_id column already exists")
+
+            # 检查是否已有 NOT NULL 约束
+            cursor.execute("PRAGMA table_info(vehicles)")
+            columns_info = cursor.fetchall()
+            user_id_notnull = None
+            for col in columns_info:
+                if col[1] == 'user_id':
+                    user_id_notnull = col[3]
+                    break
+
+            if user_id_notnull == 1:
+                print("[OK] user_id column already has NOT NULL constraint")
+            else:
+                # SQLite 不支持直接修改列约束，需要重建表
+                print("[INFO] Adding NOT NULL constraint to user_id column...")
+
+                # 1. 创建新表
+                cursor.execute("""
+                    CREATE TABLE vehicles_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id INTEGER NOT NULL,
+                        name VARCHAR NOT NULL,
+                        icon VARCHAR DEFAULT '🚗',
+                        brand VARCHAR,
+                        model VARCHAR,
+                        plate_number VARCHAR UNIQUE,
+                        initial_odometer INTEGER DEFAULT 0,
+                        fuel_type VARCHAR DEFAULT '92号汽油',
+                        is_active BOOLEAN DEFAULT 1,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                    )
+                """)
+
+                # 2. 复制数据
+                cursor.execute("""
+                    INSERT INTO vehicles_new (id, user_id, name, icon, brand, model, plate_number, initial_odometer, fuel_type, is_active, created_at)
+                    SELECT id, user_id, name, icon, brand, model, plate_number, initial_odometer, fuel_type, is_active, created_at
+                    FROM vehicles
+                """)
+
+                # 3. 删除旧表
+                cursor.execute("DROP TABLE vehicles")
+
+                # 4. 重命名新表
+                cursor.execute("ALTER TABLE vehicles_new RENAME TO vehicles")
+
+                # 5. 重建索引
+                cursor.execute("CREATE INDEX IF NOT EXISTS ix_vehicles_user_id ON vehicles(user_id)")
+
+                print("[OK] NOT NULL constraint added successfully")
         else:
-            # 添加 user_id 列
+            # 添加 user_id 列（先允许 NULL，然后设置默认值，最后重建表添加约束）
             cursor.execute("ALTER TABLE vehicles ADD COLUMN user_id INTEGER")
             print("[OK] Added user_id column")
 
-        # 检查是否有现有数据需要设置默认值
-        cursor.execute("SELECT COUNT(*) FROM vehicles WHERE user_id IS NULL")
-        null_count = cursor.fetchone()[0]
+            # 为现有数据设置默认值
+            cursor.execute("SELECT COUNT(*) FROM vehicles WHERE user_id IS NULL")
+            null_count = cursor.fetchone()[0]
 
-        if null_count > 0:
-            # 获取第一个用户 ID
-            cursor.execute("SELECT id FROM users LIMIT 1")
-            user_row = cursor.fetchone()
+            if null_count > 0:
+                cursor.execute("SELECT id FROM users ORDER BY id LIMIT 1")
+                user_row = cursor.fetchone()
 
-            if user_row:
-                first_user_id = user_row[0]
-                cursor.execute(f"UPDATE vehicles SET user_id = {first_user_id} WHERE user_id IS NULL")
-                print(f"[OK] Set default user for {null_count} records (user_id={first_user_id})")
-            else:
-                print("[WARN] No users in database, please register first")
+                if user_row:
+                    first_user_id = user_row[0]
+                    cursor.execute(f"UPDATE vehicles SET user_id = {first_user_id} WHERE user_id IS NULL")
+                    print(f"[OK] Set default user for {null_count} records (user_id={first_user_id})")
+                else:
+                    print("[WARN] No users in database, please register first")
+
+            # 重建表添加 NOT NULL 约束
+            print("[INFO] Adding NOT NULL constraint to user_id column...")
+            cursor.execute("""
+                CREATE TABLE vehicles_new (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    name VARCHAR NOT NULL,
+                    icon VARCHAR DEFAULT '🚗',
+                    brand VARCHAR,
+                    model VARCHAR,
+                    plate_number VARCHAR UNIQUE,
+                    initial_odometer INTEGER DEFAULT 0,
+                    fuel_type VARCHAR DEFAULT '92号汽油',
+                    is_active BOOLEAN DEFAULT 1,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+            cursor.execute("""
+                INSERT INTO vehicles_new (id, user_id, name, icon, brand, model, plate_number, initial_odometer, fuel_type, is_active, created_at)
+                SELECT id, user_id, name, icon, brand, model, plate_number, initial_odometer, fuel_type, is_active, created_at
+                FROM vehicles
+            """)
+
+            cursor.execute("DROP TABLE vehicles")
+            cursor.execute("ALTER TABLE vehicles_new RENAME TO vehicles")
+            cursor.execute("CREATE INDEX IF NOT EXISTS ix_vehicles_user_id ON vehicles(user_id)")
+
+            print("[OK] NOT NULL constraint added successfully")
 
         conn.commit()
 
@@ -84,4 +158,4 @@ async def migrate():
     print("\nMigration completed!")
 
 if __name__ == "__main__":
-    asyncio.run(migrate())
+    migrate()

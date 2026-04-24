@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useVehiclesStore } from '@/stores/vehicles'
@@ -8,11 +9,25 @@ const router = useRouter()
 const authStore = useAuthStore()
 const vehiclesStore = useVehiclesStore()
 
+// 当前用户信息
+const currentUser = computed(() => authStore.user)
+const userEmail = computed(() => authStore.user?.email || '')
+const userName = computed(() => authStore.user?.name || authStore.user?.email?.split('@')[0] || '用户')
+const userInitial = computed(() => userName.value.charAt(0).toUpperCase())
+
+// 车辆统计
+const vehicleCount = computed(() => (vehiclesStore.vehicles || []).length)
+
 const showPasswordDialog = ref(false)
 const passwordForm = ref({
   old_password: '',
   new_password: '',
   confirm_password: '',
+})
+
+onMounted(async () => {
+  // 加载车辆数据
+  await vehiclesStore.fetchVehicles()
 })
 
 const onChangePassword = async () => {
@@ -44,7 +59,7 @@ const onLogout = async () => {
     title: '确认退出',
     message: '确定要退出登录吗？',
   })
-  authStore.logout()
+  await authStore.logout()
   router.push('/login')
 }
 
@@ -70,7 +85,22 @@ const onAbout = () => {
 
 <template>
   <div class="settings-container">
-    <van-nav-bar title="设置" />
+    <van-nav-bar title="我的" />
+
+    <!-- 用户信息卡片 -->
+    <div class="user-card">
+      <div class="user-avatar">{{ userInitial }}</div>
+      <div class="user-info">
+        <div class="user-name">{{ userName }}</div>
+        <div class="user-email">{{ userEmail }}</div>
+      </div>
+      <div class="user-stats">
+        <div class="stat-item">
+          <div class="stat-value">{{ vehicleCount }}</div>
+          <div class="stat-label">车辆</div>
+        </div>
+      </div>
+    </div>
 
     <van-cell-group inset title="车辆管理">
       <van-cell
@@ -155,7 +185,70 @@ const onAbout = () => {
 <style scoped>
 .settings-container {
   min-height: 100vh;
-  background-color: #f5f7fa;
+  background-color: #f7f8fa;
+  padding-bottom: 80px;
+}
+
+/* 用户信息卡片 */
+.user-card {
+  margin: 12px;
+  padding: 20px;
+  background: linear-gradient(135deg, #1989fa 0%, #096dd9 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 4px 16px rgba(25, 137, 250, 0.25);
+  color: white;
+}
+
+.user-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-name {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.user-email {
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.user-stats {
+  display: flex;
+  gap: 20px;
+  flex-shrink: 0;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.stat-label {
+  font-size: 11px;
+  opacity: 0.8;
 }
 
 .dialog-content {
