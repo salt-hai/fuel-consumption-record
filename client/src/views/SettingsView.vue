@@ -168,7 +168,7 @@ const onAbout = () => {
             type="password"
             label="新密码"
             placeholder="请输入新密码（至少6位）"
-            :rules="[{ required: true, message: '请输入新密码' }, { min: 6, message: '密码至少6位' }]"
+            :rules="[{ required: true, message: '请输入新密码' }]"
           />
           <van-field
             v-model="passwordForm.confirm_password"

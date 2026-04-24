@@ -20,13 +20,11 @@ const editingRecord = ref<MaintenanceRecord | null>(null)
 
 const formData = ref<CreateMaintenanceRequest>({
   vehicle_id: 0,
-  type: '',
+  maintenance_type: '',
   date: new Date().toISOString().split('T')[0],
   odometer: 0,
   cost: 0,
-  description: '',
-  next_maintenance_odometer: undefined,
-  next_maintenance_date: '',
+  notes: '',
 })
 
 const currentDateValue = ref<string[]>(formData.value.date.split('-'))
@@ -38,7 +36,8 @@ const onDateConfirm = (val: any) => {
 }
 
 const onNextDateConfirm = (val: any) => {
-  formData.value.next_maintenance_date = val.selectedValues.join('-')
+  const dateStr = val.selectedValues.join('-')
+  formData.value.next_maintenance_date = dateStr
   showNextDatePicker.value = false
 }
 
@@ -79,8 +78,8 @@ const loadMaintenances = async () => {
   try {
     const vehicleId = vehiclesStore.currentVehicleId ?? undefined
     const [all, upcomingData] = await Promise.all([
-      maintenanceApi.getMaintenances(vehicleId),
-      maintenanceApi.getUpcomingMaintenances(vehicleId),
+      maintenanceApi.getMaintenanceRecords(vehicleId),
+      maintenanceApi.getUpcomingMaintenance(vehicleId),
     ])
     maintenances.value = all
     upcoming.value = upcomingData
@@ -93,13 +92,11 @@ const onAdd = () => {
   editingRecord.value = null
   formData.value = {
     vehicle_id: vehiclesStore.currentVehicle?.id || 0,
-    type: '',
+    maintenance_type: '',
     date: new Date().toISOString().split('T')[0],
     odometer: 0,
     cost: 0,
-    description: '',
-    next_maintenance_odometer: undefined,
-    next_maintenance_date: '',
+    notes: '',
   }
   currentDateValue.value = formData.value.date.split('-')
   showFormDialog.value = true
@@ -109,13 +106,11 @@ const onEdit = (record: MaintenanceRecord) => {
   editingRecord.value = record
   formData.value = {
     vehicle_id: record.vehicle_id,
-    type: record.type,
+    maintenance_type: record.maintenance_type,
     date: record.date,
     odometer: record.odometer,
     cost: record.cost,
-    description: record.description,
-    next_maintenance_odometer: record.next_maintenance_odometer,
-    next_maintenance_date: record.next_maintenance_date || '',
+    notes: record.notes || '',
   }
   currentDateValue.value = formData.value.date.split('-')
   showFormDialog.value = true
@@ -126,23 +121,23 @@ const onDelete = async (id: number) => {
     title: '确认删除',
     message: '确定要删除这条保养记录吗？',
   })
-  await maintenanceApi.deleteMaintenance(id)
+  await maintenanceApi.deleteMaintenanceRecord(id)
   showToast({ message: '已删除', type: 'success' })
   await loadMaintenances()
 }
 
 const onSubmit = async () => {
-  if (!formData.value.type) {
+  if (!formData.value.maintenance_type) {
     showToast({ message: '请选择保养类型' })
     return
   }
 
   try {
     if (editingRecord.value) {
-      await maintenanceApi.updateMaintenance(editingRecord.value.id, formData.value)
+      await maintenanceApi.updateMaintenanceRecord(editingRecord.value.id, formData.value)
       showToast({ message: '更新成功', type: 'success' })
     } else {
-      await maintenanceApi.createMaintenance(formData.value)
+      await maintenanceApi.createMaintenanceRecord(formData.value)
       showToast({ message: '添加成功', type: 'success' })
     }
     showFormDialog.value = false
@@ -215,7 +210,7 @@ const vehicleName = computed(() => {
           <div class="record-header">
             <div class="record-type">
               <van-tag :type="isUpcoming(item) ? 'warning' : 'primary'">
-                {{ item.type }}
+                {{ item.maintenance_type }}
               </van-tag>
               <van-tag v-if="isOverdue(item)" type="danger">已到期</van-tag>
             </div>
@@ -237,9 +232,9 @@ const vehicleName = computed(() => {
               <span class="label">费用:</span>
               <span class="value">¥{{ item.cost }}</span>
             </div>
-            <div v-if="item.description" class="info-row">
+            <div v-if="item.notes" class="info-row">
               <span class="label">备注:</span>
-              <span class="value">{{ item.description }}</span>
+              <span class="value">{{ item.notes }}</span>
             </div>
             <div v-if="item.next_maintenance_odometer || item.next_maintenance_date" class="next-maintenance">
               <span class="next-label">下次保养:</span>
@@ -284,8 +279,8 @@ const vehicleName = computed(() => {
           />
 
           <van-field
-            :value="formData.type"
-            name="type"
+            :value="formData.maintenance_type"
+            name="maintenance_type"
             label="保养类型"
             placeholder="请选择类型"
             readonly
@@ -325,31 +320,12 @@ const vehicleName = computed(() => {
           />
 
           <van-field
-            v-model="formData.description"
-            name="description"
+            v-model="formData.notes"
+            name="notes"
             type="textarea"
             label="备注"
             placeholder="请输入备注"
             rows="2"
-          />
-
-          <van-field
-            v-model.number="formData.next_maintenance_odometer"
-            name="next_odometer"
-            type="number"
-            label="下次保养里程"
-            placeholder="可选"
-            suffix="km"
-          />
-
-          <van-field
-            :value="formData.next_maintenance_date"
-            name="next_date"
-            label="下次保养日期"
-            placeholder="可选"
-            readonly
-            is-link
-            @click="showNextDatePicker = true"
           />
 
           <div class="popup-actions">
@@ -368,7 +344,7 @@ const vehicleName = computed(() => {
     <van-popup v-model:show="showTypePicker" position="bottom" round>
       <van-picker
         :columns="maintenanceTypes.map(t => ({ text: t, value: t }))"
-        @confirm="(val: any) => { formData.type = val.selectedValues[0]; showTypePicker = false }"
+        @confirm="(val: any) => { formData.maintenance_type = val.selectedValues[0]; showTypePicker = false }"
         @cancel="showTypePicker = false"
       />
     </van-popup>
@@ -381,16 +357,6 @@ const vehicleName = computed(() => {
         :max-date="new Date()"
         @confirm="onDateConfirm"
         @cancel="showDatePicker = false"
-      />
-    </van-popup>
-
-    <!-- 下次保养日期选择弹窗 -->
-    <van-popup v-model:show="showNextDatePicker" position="bottom" round>
-      <van-date-picker
-        v-model="nextDateValue"
-        :min-date="new Date()"
-        @confirm="onNextDateConfirm"
-        @cancel="showNextDatePicker = false"
       />
     </van-popup>
   </div>

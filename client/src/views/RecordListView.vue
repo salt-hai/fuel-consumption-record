@@ -156,7 +156,7 @@ const onVehicleSelect = ({ selectedValues }: { selectedValues: number[] }) => {
             <div class="record-station">
               <span class="station-icon">⛽</span>
               <span class="station-name">{{ record.gas_station || '加油站' }}</span>
-              <van-tag v-if="record.full_tank" type="success" round size="small">
+              <van-tag v-if="record.full_tank" type="success" round>
                 <van-icon name="passed" />
                 已加满
               </van-tag>
