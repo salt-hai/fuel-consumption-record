@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy import select, func, and_, case
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
