@@ -109,12 +109,6 @@ watch(() => vehiclesStore.currentVehicleId, (newId) => {
     loadStatsSilent() // 车辆切换时静默刷新
   }
 })
-    }
-    monthlyStats.value = []
-  } finally {
-    loading.value = false
-  }
-}
 
 const onSelectVehicle = ({ selectedValues }: any) => {
   vehiclesStore.setCurrentVehicle(selectedValues[0])
