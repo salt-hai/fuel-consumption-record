@@ -139,8 +139,8 @@ const onSubmit = async () => {
       showToast({ message: '添加成功', type: 'success' })
     }
     router.back()
-  } catch (error: any) {
-    showToast({ message: error || '操作失败', type: 'fail' })
+  } catch (error) {
+    // 错误已由 API 拦截器自动显示
   } finally {
     submitting.value = false
   }

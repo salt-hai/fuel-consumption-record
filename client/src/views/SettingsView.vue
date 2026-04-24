@@ -73,7 +73,7 @@ const onExport = async (type: 'csv' | 'excel') => {
     window.open(url, '_blank')
     showToast({ message: '导出成功', type: 'success' })
   } catch {
-    showToast({ message: '导出失败', type: 'fail' })
+    // 错误已由 API 拦截器自动显示
   }
 }
 

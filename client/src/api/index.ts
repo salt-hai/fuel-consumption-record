@@ -1,5 +1,6 @@
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig, type AxiosResponse } from 'axios'
 import type { AxiosRequestConfig } from 'axios'
+import { showToast } from 'vant'
 
 // API 基础配置
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -20,6 +21,18 @@ function getValidToken(): string | null {
     return null
   }
   return token
+}
+
+// 错误消息映射
+const ERROR_MESSAGES: Record<number, string> = {
+  400: '请求参数错误',
+  403: '没有权限',
+  404: '请求的资源不存在',
+  422: '数据验证失败',
+  500: '服务器错误',
+  502: '网关错误',
+  503: '服务维护中',
+  504: '请求超时',
 }
 
 // 请求拦截器 - 添加 token
@@ -83,13 +96,34 @@ rawInstance.interceptors.response.use(
             isHandling401 = false
           }, 200)
         }
+
+        return Promise.reject(data?.detail || data?.message || '请先登录')
       }
 
-      // 返回错误信息
-      return Promise.reject(data?.detail || data?.message || '请求失败')
+      // 提取错误消息
+      let errorMessage = data?.message || data?.detail || ERROR_MESSAGES[status] || '请求失败'
+
+      // 自动显示错误提示（除非是静默请求）
+      const isSilent = error.config?.headers?.['X-Silent-Error']
+      if (!isSilent) {
+        showToast({
+          message: typeof errorMessage === 'string' ? errorMessage : '请求失败',
+          type: 'fail',
+          duration: 2000,
+        })
+      }
+
+      return Promise.reject(errorMessage)
     }
 
-    return Promise.reject('网络错误，请稍后重试')
+    // 网络错误
+    showToast({
+      message: '网络错误，请稍后重试',
+      type: 'fail',
+      duration: 2000,
+    })
+
+    return Promise.reject('网络错误')
   }
 )
 

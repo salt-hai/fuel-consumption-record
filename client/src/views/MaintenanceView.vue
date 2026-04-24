@@ -147,8 +147,8 @@ const onSubmit = async () => {
     }
     showFormDialog.value = false
     await loadMaintenances()
-  } catch (error: any) {
-    showToast({ message: error || '操作失败', type: 'fail' })
+  } catch (error) {
+    // 错误已由 API 拦截器自动显示
   }
 }
 
