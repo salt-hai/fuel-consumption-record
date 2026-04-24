@@ -199,3 +199,105 @@ body {
 .text-tertiary {
   color: var(--color-text-tertiary);
 }
+
+/* ============ Vant 组件样式覆盖 ============ */
+
+/* Popup 弹窗样式 */
+.van-popup {
+  background-color: var(--color-bg-card);
+}
+
+.van-popup--round {
+  border-radius: 12px;
+}
+
+/* Dialog 对话框样式 */
+.van-dialog {
+  border-radius: 12px;
+}
+
+.van-dialog__header {
+  padding-top: 20px;
+  padding-bottom: 16px;
+}
+
+.van-dialog__message {
+  font-size: 15px;
+  color: var(--color-text-primary);
+}
+
+.van-dialog__confirm,
+.van-dialog__cancel {
+  border-radius: 8px;
+  height: 40px;
+}
+
+.van-dialog__confirm {
+  background: var(--color-primary);
+}
+
+/* Dialog Alert 样式 */
+.van-dialog__message--has-title {
+  text-align: center;
+}
+
+/* Toast 提示样式 */
+.van-toast {
+  border-radius: 8px;
+  padding: 12px 16px;
+}
+
+.van-toast--text {
+  font-size: 14px;
+}
+
+/* Confirm Dialog 确认框 */
+.van-confirm-dialog__header {
+  padding-top: 20px;
+}
+
+.van-confirm-dialog__message {
+  font-size: 15px;
+  color: var(--color-text-primary);
+}
+
+/* Picker 选择器 */
+.van-picker__toolbar {
+  padding: 12px 16px;
+}
+
+.van-picker-column__item {
+  font-size: 16px;
+}
+
+/* DateTimePicker 日期选择器 */
+.van-datetime-picker__toolbar {
+  padding: 12px 16px;
+}
+
+/* SwipeCell 滑动单元格 */
+.van-swipe-cell {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* ActionSheet 动作面板 */
+.van-action-sheet {
+  border-radius: 12px 12px 0 0;
+}
+
+.van-action-sheet__item {
+  font-size: 15px;
+}
+
+/* Notify 通知 */
+.van-notify {
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 14px;
+}
+
+/* Overlay 遮罩层 */
+.van-overlay {
+  background-color: rgba(0, 0, 0, 0.5);
+}

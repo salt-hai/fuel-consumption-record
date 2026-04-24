@@ -65,15 +65,17 @@ const onEdit = (vehicle: Vehicle) => {
 
 const onDelete = async (vehicle: Vehicle) => {
   await showConfirmDialog({
-    title: '确认删除',
+    title: '删除车辆',
     message: `确定要删除「${vehicle.name}」吗？`,
+    confirmButtonText: '删除',
+    confirmButtonColor: '#ee0a24',
   })
   await vehiclesStore.deleteVehicle(vehicle.id)
   showToast({ message: '已删除', type: 'success' })
 }
 
-const onIconSelect = (icon: string) => {
-  newVehicle.value.icon = icon
+const onIconSelect = ({ selectedValues }: any) => {
+  newVehicle.value.icon = selectedValues[0]
   showIconPicker.value = false
 }
 
@@ -162,9 +164,12 @@ const onSubmitEdit = async () => {
 
     <!-- 添加车辆弹窗 -->
     <van-popup v-model:show="showAddDialog" position="bottom" round>
-      <div class="dialog-content">
-        <h3>添加车辆</h3>
-        <van-form @submit="onSubmitAdd">
+      <div class="popup-content">
+        <div class="popup-header">
+          <h3>添加车辆</h3>
+          <van-icon name="cross" @click="showAddDialog = false" />
+        </div>
+        <van-form @submit="onSubmitAdd" class="popup-form">
           <van-field
             v-model="newVehicle.icon"
             label="图标"
@@ -209,21 +214,26 @@ const onSubmitEdit = async () => {
             label="燃油类型"
             placeholder="92号汽油"
           />
-          <van-button round block type="primary" native-type="submit">
-            添加
-          </van-button>
-          <van-button round block @click="showAddDialog = false">
-            取消
-          </van-button>
+          <div class="popup-actions">
+            <van-button round block @click="showAddDialog = false">
+              取消
+            </van-button>
+            <van-button round block type="primary" native-type="submit">
+              添加
+            </van-button>
+          </div>
         </van-form>
       </div>
     </van-popup>
 
     <!-- 编辑车辆弹窗 -->
     <van-popup v-model:show="showEditDialog" position="bottom" round>
-      <div class="dialog-content">
-        <h3>编辑车辆</h3>
-        <van-form @submit="onSubmitEdit">
+      <div class="popup-content">
+        <div class="popup-header">
+          <h3>编辑车辆</h3>
+          <van-icon name="cross" @click="showEditDialog = false" />
+        </div>
+        <van-form @submit="onSubmitEdit" class="popup-form">
           <van-field
             v-model="newVehicle.icon"
             label="图标"
@@ -268,34 +278,36 @@ const onSubmitEdit = async () => {
             label="燃油类型"
             placeholder="92号汽油"
           />
-          <van-button round block type="primary" native-type="submit">
-            保存
-          </van-button>
-          <van-button round block @click="showEditDialog = false">
-            取消
-          </van-button>
+          <div class="popup-actions">
+            <van-button round block @click="showEditDialog = false">
+              取消
+            </van-button>
+            <van-button round block type="primary" native-type="submit">
+              保存
+            </van-button>
+          </div>
         </van-form>
       </div>
     </van-popup>
 
     <!-- 图标选择弹窗 -->
     <van-popup v-model:show="showIconPicker" position="bottom" round>
-      <div class="icon-picker-content">
-        <h3>选择图标</h3>
+      <div class="icon-picker-popup">
+        <div class="popup-header">
+          <h3>选择图标</h3>
+          <van-icon name="cross" @click="showIconPicker = false" />
+        </div>
         <div class="icon-grid">
           <div
             v-for="icon in VEHICLE_ICONS"
             :key="icon"
             class="icon-item"
             :class="{ selected: newVehicle.icon === icon }"
-            @click="onIconSelect(icon)"
+            @click="onIconSelect({ selectedValues: [icon] })"
           >
             {{ icon }}
           </div>
         </div>
-        <van-button round block @click="showIconPicker = false">
-          取消
-        </van-button>
       </div>
     </van-popup>
   </div>
@@ -439,51 +451,66 @@ const onSubmitEdit = async () => {
   box-shadow: 0 2px 10px rgba(25, 137, 250, 0.4);
 }
 
-/* 弹窗内容 */
-.dialog-content {
-  padding: 20px;
-  max-height: 70vh;
-  overflow-y: auto;
+/* 弹窗内容统一样式 */
+.popup-content {
+  padding: 0;
 }
 
-.dialog-content h3 {
-  margin: 0 0 16px 0;
-  text-align: center;
-  font-size: 18px;
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f5f6f7;
+}
+
+.popup-header h3 {
+  margin: 0;
+  font-size: 16px;
   font-weight: 600;
   color: #323233;
 }
 
-.dialog-content .van-button {
-  margin-top: 8px;
+.popup-header .van-icon {
+  font-size: 20px;
+  color: #969799;
+  cursor: pointer;
 }
 
-.dialog-content .van-field {
+.popup-form {
+  padding: 16px 20px;
+}
+
+.popup-form .van-field {
   padding: 12px 0;
+  background: transparent;
+}
+
+.popup-actions {
+  display: flex;
+  gap: 12px;
+  padding: 0 20px 20px;
+}
+
+.popup-actions .van-button {
+  flex: 1;
+  height: 44px;
 }
 
 .icon-preview {
   font-size: 28px;
 }
 
-/* 图标选择 */
-.icon-picker-content {
-  padding: 20px;
-}
-
-.icon-picker-content h3 {
-  margin: 0 0 16px 0;
-  text-align: center;
-  font-size: 18px;
-  font-weight: 600;
-  color: #323233;
+/* 图标选择器 */
+.icon-picker-popup {
+  padding: 0;
 }
 
 .icon-grid {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   gap: 8px;
-  margin-bottom: 16px;
+  padding: 16px 20px;
 }
 
 .icon-item {
@@ -508,5 +535,15 @@ const onSubmitEdit = async () => {
 
 .icon-item:active {
   transform: scale(0.95);
+}
+
+:deep(.van-field__label) {
+  color: #646566;
+  font-weight: 500;
+}
+
+:deep(.van-button--primary) {
+  background: linear-gradient(135deg, #1989fa 0%, #096dd9 100%);
+  border: none;
 }
 </style>

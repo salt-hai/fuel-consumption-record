@@ -262,16 +262,19 @@ const vehicleName = computed(() => {
       @click="onAdd"
     />
 
-    <!-- 添加/编辑表单 -->
+    <!-- 添加/编辑表单弹窗 -->
     <van-popup
       v-model:show="showFormDialog"
       position="bottom"
       :style="{ height: '70%' }"
       round
     >
-      <div class="form-container">
-        <h3>{{ editingRecord ? '编辑' : '添加' }}保养记录</h3>
-        <van-form @submit="onSubmit">
+      <div class="popup-content">
+        <div class="popup-header">
+          <h3>{{ editingRecord ? '编辑' : '添加' }}保养记录</h3>
+          <van-icon name="cross" @click="showFormDialog = false" />
+        </div>
+        <van-form @submit="onSubmit" class="popup-form">
           <van-field
             :value="vehicleName"
             label="车辆"
@@ -349,12 +352,12 @@ const vehicleName = computed(() => {
             @click="showNextDatePicker = true"
           />
 
-          <div class="form-actions">
-            <van-button round block type="primary" native-type="submit">
-              {{ editingRecord ? '保存' : '添加' }}
-            </van-button>
+          <div class="popup-actions">
             <van-button round block @click="showFormDialog = false">
               取消
+            </van-button>
+            <van-button round block type="primary" native-type="submit">
+              {{ editingRecord ? '保存' : '添加' }}
             </van-button>
           </div>
         </van-form>
@@ -362,7 +365,7 @@ const vehicleName = computed(() => {
     </van-popup>
 
     <!-- 保养类型选择弹窗 -->
-    <van-popup v-model:show="showTypePicker" position="bottom">
+    <van-popup v-model:show="showTypePicker" position="bottom" round>
       <van-picker
         :columns="maintenanceTypes.map(t => ({ text: t, value: t }))"
         @confirm="(val: any) => { formData.type = val.selectedValues[0]; showTypePicker = false }"
@@ -371,7 +374,7 @@ const vehicleName = computed(() => {
     </van-popup>
 
     <!-- 日期选择弹窗 -->
-    <van-popup v-model:show="showDatePicker" position="bottom">
+    <van-popup v-model:show="showDatePicker" position="bottom" round>
       <van-date-picker
         v-model="currentDateValue"
         :min-date="new Date(2020, 0, 1)"
@@ -382,7 +385,7 @@ const vehicleName = computed(() => {
     </van-popup>
 
     <!-- 下次保养日期选择弹窗 -->
-    <van-popup v-model:show="showNextDatePicker" position="bottom">
+    <van-popup v-model:show="showNextDatePicker" position="bottom" round>
       <van-date-picker
         v-model="nextDateValue"
         :min-date="new Date()"
@@ -475,21 +478,56 @@ const vehicleName = computed(() => {
   font-size: 13px;
 }
 
-.form-container {
-  padding: 20px;
+/* 弹窗样式 */
+.popup-content {
+  padding: 0;
   height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f5f6f7;
+  flex-shrink: 0;
+}
+
+.popup-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #323233;
+}
+
+.popup-header .van-icon {
+  font-size: 20px;
+  color: #969799;
+  cursor: pointer;
+}
+
+.popup-form {
+  padding: 16px 20px;
+  flex: 1;
   overflow-y: auto;
 }
 
-.form-container h3 {
-  margin: 0 0 20px 0;
-  text-align: center;
+.popup-form .van-field {
+  padding: 12px 0;
+  background: transparent;
 }
 
-.form-actions {
+.popup-actions {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 20px;
+  gap: 12px;
+  padding: 0 20px 20px;
+  flex-shrink: 0;
+}
+
+.popup-actions .van-button {
+  flex: 1;
+  height: 44px;
 }
 </style>

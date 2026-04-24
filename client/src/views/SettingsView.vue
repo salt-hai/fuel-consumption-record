@@ -58,6 +58,8 @@ const onLogout = async () => {
   await showConfirmDialog({
     title: '确认退出',
     message: '确定要退出登录吗？',
+    confirmButtonText: '退出',
+    confirmButtonColor: '#ee0a24',
   })
   await authStore.logout()
   router.push('/login')
@@ -77,8 +79,10 @@ const onExport = async (type: 'csv' | 'excel') => {
 
 const onAbout = () => {
   showDialog({
-    title: '关于',
+    title: '关于应用',
     message: '汽车油耗记录 v1.0.0\n\n一个简单易用的车辆油耗管理工具',
+    confirmButtonText: '我知道了',
+    confirmButtonColor: '#1989fa',
   })
 }
 </script>
@@ -146,9 +150,12 @@ const onAbout = () => {
 
     <!-- 修改密码弹窗 -->
     <van-popup v-model:show="showPasswordDialog" position="bottom" round>
-      <div class="dialog-content">
-        <h3>修改密码</h3>
-        <van-form @submit="onChangePassword">
+      <div class="popup-content">
+        <div class="popup-header">
+          <h3>修改密码</h3>
+          <van-icon name="cross" @click="showPasswordDialog = false" />
+        </div>
+        <van-form @submit="onChangePassword" class="popup-form">
           <van-field
             v-model="passwordForm.old_password"
             type="password"
@@ -160,8 +167,8 @@ const onAbout = () => {
             v-model="passwordForm.new_password"
             type="password"
             label="新密码"
-            placeholder="请输入新密码"
-            :rules="[{ required: true, message: '请输入新密码' }]"
+            placeholder="请输入新密码（至少6位）"
+            :rules="[{ required: true, message: '请输入新密码' }, { min: 6, message: '密码至少6位' }]"
           />
           <van-field
             v-model="passwordForm.confirm_password"
@@ -170,12 +177,14 @@ const onAbout = () => {
             placeholder="请再次输入新密码"
             :rules="[{ required: true, message: '请确认新密码' }]"
           />
-          <van-button round block type="primary" native-type="submit">
-            确认修改
-          </van-button>
-          <van-button round block @click="showPasswordDialog = false">
-            取消
-          </van-button>
+          <div class="popup-actions">
+            <van-button round block @click="showPasswordDialog = false">
+              取消
+            </van-button>
+            <van-button round block type="primary" native-type="submit">
+              确认修改
+            </van-button>
+          </div>
         </van-form>
       </div>
     </van-popup>
@@ -251,16 +260,60 @@ const onAbout = () => {
   opacity: 0.8;
 }
 
-.dialog-content {
-  padding: 20px;
+/* 弹窗内容 */
+.popup-content {
+  padding: 0;
 }
 
-.dialog-content h3 {
-  margin: 0 0 16px 0;
-  text-align: center;
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f5f6f7;
 }
 
-.dialog-content .van-button {
-  margin-top: 8px;
+.popup-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #323233;
+}
+
+.popup-header .van-icon {
+  font-size: 20px;
+  color: #969799;
+  cursor: pointer;
+}
+
+.popup-form {
+  padding: 16px 20px;
+}
+
+.popup-form .van-field {
+  padding: 12px 0;
+  margin-bottom: 8px;
+  background: transparent;
+}
+
+.popup-actions {
+  display: flex;
+  gap: 12px;
+  padding: 0 20px 20px;
+}
+
+.popup-actions .van-button {
+  flex: 1;
+  height: 44px;
+}
+
+:deep(.van-field__label) {
+  color: #646566;
+  font-weight: 500;
+}
+
+:deep(.van-button--primary) {
+  background: linear-gradient(135deg, #1989fa 0%, #096dd9 100%);
+  border: none;
 }
 </style>

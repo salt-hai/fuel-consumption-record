@@ -330,18 +330,19 @@ const onSelectVehicle = ({ selectedValues }: any) => {
     <!-- 车辆选择弹窗 -->
     <van-popup v-model:show="showVehiclePicker" position="bottom" round>
       <van-picker
-        :model-value="vehiclePickerValue"
         :columns="vehicleColumns"
+        :model-value="vehiclePickerValue"
         @confirm="onSelectVehicle"
         @cancel="showVehiclePicker = false"
       />
     </van-popup>
 
+    <!-- 日期选择弹窗 -->
     <van-popup v-model:show="showDatePicker" position="bottom" round>
       <van-date-picker
         :model-value="currentDateValue"
-        :min-date="new Date(2020, 0, 1)"
         :max-date="new Date()"
+        :min-date="new Date(2020, 0, 1)"
         @confirm="onDateConfirm"
         @cancel="showDatePicker = false"
       />

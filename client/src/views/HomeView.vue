@@ -223,8 +223,8 @@ const addRecord = () => {
     <!-- 车辆选择弹窗 -->
     <van-popup v-model:show="showVehiclePicker" position="bottom" round>
       <van-picker
-        :model-value="vehiclePickerValue"
         :columns="vehicleColumns"
+        :model-value="vehiclePickerValue"
         @confirm="onSelectVehicle"
         @cancel="showVehiclePicker = false"
       />
