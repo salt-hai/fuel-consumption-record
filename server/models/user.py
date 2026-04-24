@@ -14,4 +14,6 @@ class User(Base):
     created_at = Column(DateTime, server_default=func.current_timestamp())
     updated_at = Column(DateTime, server_default=func.current_timestamp(), onupdate=func.current_timestamp())
 
+    # 关系
     tokens = relationship("Token", back_populates="user", cascade="all, delete-orphan")
+    vehicles = relationship("Vehicle", back_populates="user", cascade="all, delete-orphan")

@@ -1,23 +1,33 @@
+import bcrypt
 from fastapi import APIRouter, HTTPException, Depends, status, Header
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from passlib.context import CryptContext
 from database import get_db
 from models.user import User
 from models.token import Token
 from schemas.auth import RegisterRequest, LoginRequest, ChangePasswordRequest
 from schemas.common import success_response
 from utils.auth import get_current_user, generate_token, hash_token
+from config import settings
 
 router = APIRouter(prefix="/v1/auth", tags=["认证"])
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    """验证密码"""
+    # bcrypt 限制密码最大 72 字节
+    password_bytes = plain_password.encode('utf-8')
+    if len(password_bytes) > 72:
+        password_bytes = password_bytes[:72]
+    return bcrypt.checkpw(password_bytes, hashed_password.encode('utf-8'))
 
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+    """生成密码哈希"""
+    # bcrypt 限制密码最大 72 字节
+    password_bytes = password.encode('utf-8')
+    if len(password_bytes) > 72:
+        password_bytes = password_bytes[:72]
+    hashed = bcrypt.hashpw(password_bytes, bcrypt.gensalt())
+    return hashed.decode('utf-8')
 
 async def get_token_from_header(authorization: str = Header(None)) -> str:
     """从 Authorization 头提取 token"""
@@ -28,6 +38,13 @@ async def get_token_from_header(authorization: str = Header(None)) -> str:
 @router.post("/register")
 async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)):
     """注册新用户"""
+    # 检查注册功能是否启用
+    if not settings.REGISTRATION_ENABLED:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="注册功能已关闭，请联系管理员开通账户"
+        )
+
     result = await db.execute(select(User).where(User.email == data.email))
     if result.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="该邮箱已被注册")

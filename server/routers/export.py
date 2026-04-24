@@ -9,6 +9,8 @@ import io
 from database import get_db
 from models.fuel_record import FuelRecord
 from models.vehicle import Vehicle
+from models.user import User
+from utils.auth import get_current_user
 
 router = APIRouter(prefix="/v1/export", tags=["数据导出"])
 
@@ -16,11 +18,20 @@ async def get_export_data(
     vehicle_id: Optional[int],
     start_date: Optional[str],
     end_date: Optional[str],
+    user: User,
     db: AsyncSession
 ):
-    query = select(FuelRecord)
+    """获取当前用户的导出数据"""
+    # 只查询当前用户车辆的记录
+    query = select(FuelRecord).join(Vehicle, FuelRecord.vehicle_id == Vehicle.id).where(Vehicle.user_id == user.id)
 
     if vehicle_id:
+        # 验证车辆属于当前用户
+        result = await db.execute(
+            select(Vehicle).where(Vehicle.id == vehicle_id, Vehicle.user_id == user.id)
+        )
+        if not result.scalar_one_or_none():
+            return []  # 车辆不存在或不属于当前用户
         query = query.where(FuelRecord.vehicle_id == vehicle_id)
     if start_date:
         query = query.where(FuelRecord.date >= start_date)
@@ -36,9 +47,11 @@ async def export_csv(
     vehicle_id: Optional[int] = Query(None),
     start_date: Optional[str] = Query(None),
     end_date: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    records = await get_export_data(vehicle_id, start_date, end_date, db)
+    """导出当前用户的加油记录为 CSV"""
+    records = await get_export_data(vehicle_id, start_date, end_date, current_user, db)
 
     output = io.StringIO()
     writer = csv.writer(output)
@@ -74,12 +87,14 @@ async def export_excel(
     vehicle_id: Optional[int] = Query(None),
     start_date: Optional[str] = Query(None),
     end_date: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
+    """导出当前用户的加油记录为 Excel"""
     from openpyxl import Workbook
     from openpyxl.styles import Font, Alignment, PatternFill
 
-    records = await get_export_data(vehicle_id, start_date, end_date, db)
+    records = await get_export_data(vehicle_id, start_date, end_date, current_user, db)
 
     wb = Workbook()
     ws = wb.active

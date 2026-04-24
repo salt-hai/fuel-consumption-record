@@ -3,6 +3,7 @@ import api from './index'
 export interface Vehicle {
   id: number
   name: string
+  icon: string
   brand?: string
   model?: string
   plate_number?: string
@@ -14,6 +15,7 @@ export interface Vehicle {
 
 export interface CreateVehicleRequest {
   name: string
+  icon?: string
   brand?: string
   model?: string
   plate_number?: string
@@ -44,3 +46,10 @@ export const updateVehicle = (id: number, data: UpdateVehicleRequest) => {
 export const deleteVehicle = (id: number) => {
   return api.delete(`/v1/vehicles/${id}/`)
 }
+
+// 可用的车辆图标
+export const VEHICLE_ICONS = [
+  '🚗', '🚙', '🚐', '🚌', '🏎️', '🚑', '🚒', '🚚�',
+  '🏍️', '🛵', '🚲', '🚆', '🚇', '🚈', '🚂', '🚃',
+  '🚎', '🚐', '🛻', '🚛', '⛽', '🔧', '💨', '🎯'
+]

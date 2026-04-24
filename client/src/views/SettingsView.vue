@@ -1,18 +1,34 @@
 <script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useVehiclesStore } from '@/stores/vehicles'
-import { showToast, showConfirmDialog, showDialog } from 'vant'
+import { showToast, showDialog } from 'vant'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const vehiclesStore = useVehiclesStore()
 
+// 当前用户信息
+const currentUser = computed(() => authStore.user)
+const userEmail = computed(() => authStore.user?.email || '')
+const userName = computed(() => authStore.user?.name || authStore.user?.email?.split('@')[0] || '用户')
+const userInitial = computed(() => userName.value.charAt(0).toUpperCase())
+
+// 车辆统计
+const vehicleCount = computed(() => (vehiclesStore.vehicles || []).length)
+
 const showPasswordDialog = ref(false)
+const showLogoutDialog = ref(false)
 const passwordForm = ref({
   old_password: '',
   new_password: '',
   confirm_password: '',
+})
+
+onMounted(async () => {
+  // 加载车辆数据
+  await vehiclesStore.fetchVehicles()
 })
 
 const onChangePassword = async () => {
@@ -39,12 +55,13 @@ const onChangePassword = async () => {
   }
 }
 
-const onLogout = async () => {
-  await showConfirmDialog({
-    title: '确认退出',
-    message: '确定要退出登录吗？',
-  })
-  authStore.logout()
+const onLogout = () => {
+  showLogoutDialog.value = true
+}
+
+const confirmLogout = async () => {
+  await authStore.logout()
+  showLogoutDialog.value = false
   router.push('/login')
 }
 
@@ -56,21 +73,38 @@ const onExport = async (type: 'csv' | 'excel') => {
     window.open(url, '_blank')
     showToast({ message: '导出成功', type: 'success' })
   } catch {
-    showToast({ message: '导出失败', type: 'fail' })
+    // 错误已由 API 拦截器自动显示
   }
 }
 
 const onAbout = () => {
   showDialog({
-    title: '关于',
+    title: '关于应用',
     message: '汽车油耗记录 v1.0.0\n\n一个简单易用的车辆油耗管理工具',
+    confirmButtonText: '我知道了',
+    confirmButtonColor: '#1989fa',
   })
 }
 </script>
 
 <template>
   <div class="settings-container">
-    <van-nav-bar title="设置" />
+    <van-nav-bar title="我的" />
+
+    <!-- 用户信息卡片 -->
+    <div class="user-card">
+      <div class="user-avatar">{{ userInitial }}</div>
+      <div class="user-info">
+        <div class="user-name">{{ userName }}</div>
+        <div class="user-email">{{ userEmail }}</div>
+      </div>
+      <div class="user-stats">
+        <div class="stat-item">
+          <div class="stat-value">{{ vehicleCount }}</div>
+          <div class="stat-label">车辆</div>
+        </div>
+      </div>
+    </div>
 
     <van-cell-group inset title="车辆管理">
       <van-cell
@@ -89,7 +123,7 @@ const onAbout = () => {
       <van-cell
         title="退出登录"
         is-link
-        @click="onLogout"
+        @click="showLogoutDialog = true"
       />
     </van-cell-group>
 
@@ -116,9 +150,12 @@ const onAbout = () => {
 
     <!-- 修改密码弹窗 -->
     <van-popup v-model:show="showPasswordDialog" position="bottom" round>
-      <div class="dialog-content">
-        <h3>修改密码</h3>
-        <van-form @submit="onChangePassword">
+      <div class="popup-content">
+        <div class="popup-header">
+          <h3>修改密码</h3>
+          <van-icon name="cross" @click="showPasswordDialog = false" />
+        </div>
+        <van-form @submit="onChangePassword" class="popup-form">
           <van-field
             v-model="passwordForm.old_password"
             type="password"
@@ -130,8 +167,8 @@ const onAbout = () => {
             v-model="passwordForm.new_password"
             type="password"
             label="新密码"
-            placeholder="请输入新密码"
-            :rules="[{ required: true, message: '请输入新密码' }]"
+            placeholder="请输入新密码（至少6位）"
+            :rules="[{ required: true, message: '请输入新密码' }, { min: 6, message: '密码至少6位' }]"
           />
           <van-field
             v-model="passwordForm.confirm_password"
@@ -140,13 +177,36 @@ const onAbout = () => {
             placeholder="请再次输入新密码"
             :rules="[{ required: true, message: '请确认新密码' }]"
           />
-          <van-button round block type="primary" native-type="submit">
-            确认修改
-          </van-button>
-          <van-button round block @click="showPasswordDialog = false">
-            取消
-          </van-button>
+          <div class="popup-actions">
+            <van-button round block @click="showPasswordDialog = false">
+              取消
+            </van-button>
+            <van-button round block type="primary" native-type="submit">
+              确认修改
+            </van-button>
+          </div>
         </van-form>
+      </div>
+    </van-popup>
+
+    <!-- 退出登录弹窗 -->
+    <van-popup v-model:show="showLogoutDialog" position="bottom" round>
+      <div class="popup-content">
+        <div class="popup-header">
+          <h3>确认退出</h3>
+          <van-icon name="cross" @click="showLogoutDialog = false" />
+        </div>
+        <div class="popup-form">
+          <p class="confirm-message">确定要退出登录吗？</p>
+          <div class="popup-actions">
+            <van-button round block @click="showLogoutDialog = false">
+              取消
+            </van-button>
+            <van-button round block type="danger" @click="confirmLogout">
+              退出
+            </van-button>
+          </div>
+        </div>
       </div>
     </van-popup>
   </div>
@@ -155,19 +215,138 @@ const onAbout = () => {
 <style scoped>
 .settings-container {
   min-height: 100vh;
-  background-color: #f5f7fa;
+  background-color: #f7f8fa;
+  padding-bottom: 80px;
 }
 
-.dialog-content {
+/* 用户信息卡片 */
+.user-card {
+  margin: 12px;
   padding: 20px;
+  background: linear-gradient(135deg, #1989fa 0%, #096dd9 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 4px 16px rgba(25, 137, 250, 0.25);
+  color: white;
 }
 
-.dialog-content h3 {
-  margin: 0 0 16px 0;
+.user-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-name {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.user-email {
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.user-stats {
+  display: flex;
+  gap: 20px;
+  flex-shrink: 0;
+}
+
+.stat-item {
   text-align: center;
 }
 
-.dialog-content .van-button {
-  margin-top: 8px;
+.stat-value {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.stat-label {
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+/* 弹窗内容 */
+.popup-content {
+  padding: 0;
+}
+
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f5f6f7;
+}
+
+.popup-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #323233;
+}
+
+.popup-header .van-icon {
+  font-size: 20px;
+  color: #969799;
+  cursor: pointer;
+}
+
+.popup-form {
+  padding: 16px 20px;
+}
+
+.popup-form .van-field {
+  padding: 12px 0;
+  margin-bottom: 8px;
+  background: transparent;
+}
+
+.popup-actions {
+  display: flex;
+  gap: 12px;
+  padding: 0 20px 20px;
+}
+
+.popup-actions .van-button {
+  flex: 1;
+  height: 44px;
+}
+
+:deep(.van-field__label) {
+  color: #646566;
+  font-weight: 500;
+}
+
+:deep(.van-button--primary) {
+  background: linear-gradient(135deg, #1989fa 0%, #096dd9 100%);
+  border: none;
+}
+
+:deep(.van-button--danger) {
+  background: linear-gradient(135deg, #ee0a24 0%, #c41d30 100%);
+  border: none;
+}
+
+.confirm-message {
+  margin: 20px 0;
+  font-size: 15px;
+  color: #323233;
+  text-align: center;
 }
 </style>

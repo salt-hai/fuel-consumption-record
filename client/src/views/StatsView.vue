@@ -37,31 +37,41 @@ const monthlyStats = ref<Array<{
 const loading = ref(false)
 const showVehiclePicker = ref(false)
 const showPeriodPicker = ref(false)
+const vehiclePickerValue = ref<number[]>([])
 
 const currentPeriodText = computed(() => {
   return periodOptions.find(p => p.value === periodValue.value)?.text || '选择时间'
 })
 
 const currentVehicleName = computed(() => {
-  return vehiclesStore.currentVehicle?.name || '选择车辆'
+  const vehicle = vehiclesStore.currentVehicle
+  return vehicle ? `${vehicle.icon} ${vehicle.name}` : '选择车辆'
 })
 
-// 安全地获取车辆选项
 const vehicleColumns = computed(() => {
-  return (vehiclesStore.vehicles || []).map(v => ({ text: v.name, value: v.id }))
+  return (vehiclesStore.vehicles || []).map(v => ({
+    text: `${v.icon} ${v.name}`,
+    value: v.id
+  }))
 })
 
 onMounted(async () => {
   try {
     await vehiclesStore.fetchVehicles()
+    if (vehiclesStore.currentVehicle) {
+      vehiclePickerValue.value = [vehiclesStore.currentVehicle.id]
+    }
     await loadStats()
   } catch (error) {
     console.error('初始化失败:', error)
   }
 })
 
-watch(() => vehiclesStore.currentVehicleId, () => {
-  loadStats()
+watch(() => vehiclesStore.currentVehicleId, (newId) => {
+  if (newId) {
+    vehiclePickerValue.value = [newId]
+    loadStats()
+  }
 })
 
 const loadStats = async () => {
@@ -95,108 +105,147 @@ const loadStats = async () => {
   }
 }
 
-const onSelectVehicle = (val: any) => {
-  vehiclesStore.setCurrentVehicle(val.value)
+const onSelectVehicle = ({ selectedValues }: any) => {
+  vehiclesStore.setCurrentVehicle(selectedValues[0])
+  vehiclePickerValue.value = selectedValues
   showVehiclePicker.value = false
   loadStats()
 }
 
-const onSelectPeriod = (val: any) => {
-  periodValue.value = val.value
+const onSelectPeriod = ({ selectedValues }: any) => {
+  periodValue.value = selectedValues[0]
   showPeriodPicker.value = false
   loadStats()
 }
 </script>
 
 <template>
-  <div class="stats-container">
+  <div class="stats-page">
     <van-nav-bar title="统计分析" />
 
     <!-- 车辆和时间选择 -->
-    <van-cell-group inset>
-      <van-cell
-        :title="currentVehicleName"
-        is-link
-        @click="showVehiclePicker = true"
-      />
-      <van-cell
-        :title="currentPeriodText"
-        is-link
-        @click="showPeriodPicker = true"
-      />
-    </van-cell-group>
+    <div class="filter-section">
+      <div class="filter-card">
+        <div class="filter-item" @click="showVehiclePicker = true">
+          <span class="filter-label">车辆</span>
+          <span class="filter-value">{{ currentVehicleName }}</span>
+          <van-icon name="arrow-down" />
+        </div>
+        <div class="filter-divider" />
+        <div class="filter-item" @click="showPeriodPicker = true">
+          <span class="filter-label">时间范围</span>
+          <span class="filter-value">{{ currentPeriodText }}</span>
+          <van-icon name="arrow-down" />
+        </div>
+      </div>
+    </div>
 
-    <!-- 汇总卡片 -->
-    <van-cell-group inset title="数据汇总">
-      <van-cell title="总记录数" :value="`${summary.total_records} 条`" />
-      <van-cell title="总花费" :value="formatMoney(summary.total_cost)" />
-      <van-cell title="总里程" :value="formatOdometer(summary.total_distance)" />
-      <van-cell title="平均油耗" :value="formatConsumption(summary.avg_consumption)" />
-      <van-cell title="最新油耗" :value="formatConsumption(summary.latest_consumption)" />
-    </van-cell-group>
+    <!-- 统计卡片 -->
+    <div class="section-title">📊 数据汇总</div>
+    <div class="stats-section">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">📝</div>
+          <div class="stat-content">
+            <div class="stat-value">{{ summary.total_records }}</div>
+            <div class="stat-label">总记录数</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">💰</div>
+          <div class="stat-content">
+            <div class="stat-value">{{ formatMoney(summary.total_cost) }}</div>
+            <div class="stat-label">总花费</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">📍</div>
+          <div class="stat-content">
+            <div class="stat-value">{{ formatOdometer(summary.total_distance) }}</div>
+            <div class="stat-label">总里程</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">⛽</div>
+          <div class="stat-content">
+            <div class="stat-value">{{ formatConsumption(summary.avg_consumption) }}</div>
+            <div class="stat-label">平均油耗</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">📈</div>
+          <div class="stat-content">
+            <div class="stat-value">{{ formatConsumption(summary.latest_consumption) }}</div>
+            <div class="stat-label">最新油耗</div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- 月度花费图表 -->
-    <van-cell-group inset title="月度花费">
-      <div class="chart-container">
-        <StatsChart
-          v-if="monthlyStats.length > 0"
-          type="bar"
-          :data="monthlyStats"
-          :loading="loading"
-        />
-        <van-empty v-else-if="!loading" description="暂无数据" image-size="80" />
+    <div class="section-title">💵 月度花费</div>
+    <div class="chart-card">
+      <StatsChart
+        v-if="monthlyStats.length > 0"
+        type="bar"
+        :data="monthlyStats"
+        :loading="loading"
+      />
+      <div v-else-if="!loading" class="chart-empty">
+        <van-empty description="暂无数据" image-size="60" />
       </div>
-    </van-cell-group>
+    </div>
 
     <!-- 油耗趋势图表 -->
-    <van-cell-group inset title="油耗趋势">
-      <div class="chart-container">
-        <StatsChart
-          v-if="monthlyStats.length > 0"
-          type="line"
-          :data="monthlyStats.map(s => ({ date: s.month, consumption: s.consumption }))"
-          :loading="loading"
-        />
-        <van-empty v-else-if="!loading" description="暂无数据" image-size="80" />
+    <div class="section-title">📈 油耗趋势</div>
+    <div class="chart-card">
+      <StatsChart
+        v-if="monthlyStats.length > 0"
+        type="line"
+        :data="monthlyStats.map(s => ({ date: s.month, consumption: s.consumption }))"
+        :loading="loading"
+      />
+      <div v-else-if="!loading" class="chart-empty">
+        <van-empty description="暂无数据" image-size="60" />
       </div>
-    </van-cell-group>
+    </div>
 
     <!-- 月度统计表格 -->
-    <van-cell-group inset title="月度详情">
-      <div v-if="monthlyStats.length === 0" class="empty-state">
-        <van-empty description="暂无数据" />
+    <div class="section-title">📅 月度详情</div>
+    <div class="table-card">
+      <div v-if="monthlyStats.length === 0" class="table-empty">
+        <van-empty description="暂无数据" image-size="60" />
       </div>
-      <div v-else class="table-container">
-        <table class="stats-table">
-          <thead>
-            <tr>
-              <th>月份</th>
-              <th>花费</th>
-              <th>油耗</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="stat in monthlyStats" :key="stat.month">
-              <td>{{ stat.month }}</td>
-              <td>{{ formatMoney(stat.cost) }}</td>
-              <td>{{ formatConsumption(stat.consumption) }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </van-cell-group>
+      <table v-else class="stats-table">
+        <thead>
+          <tr>
+            <th>月份</th>
+            <th>花费</th>
+            <th>油耗</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="stat in monthlyStats" :key="stat.month">
+            <td>{{ stat.month }}</td>
+            <td>{{ formatMoney(stat.cost) }}</td>
+            <td>{{ formatConsumption(stat.consumption) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
     <!-- 车辆选择弹窗 -->
-    <van-popup v-model:show="showVehiclePicker" position="bottom">
+    <van-popup v-model:show="showVehiclePicker" position="bottom" round>
       <van-picker
         :columns="vehicleColumns"
+        :model-value="vehiclePickerValue"
         @confirm="onSelectVehicle"
         @cancel="showVehiclePicker = false"
       />
     </van-popup>
 
     <!-- 时间选择弹窗 -->
-    <van-popup v-model:show="showPeriodPicker" position="bottom">
+    <van-popup v-model:show="showPeriodPicker" position="bottom" round>
       <van-picker
         :columns="periodOptions"
         @confirm="onSelectPeriod"
@@ -207,52 +256,166 @@ const onSelectPeriod = (val: any) => {
 </template>
 
 <style scoped>
-.stats-container {
+.stats-page {
   min-height: 100vh;
-  background-color: #f5f7fa;
+  background-color: #f7f8fa;
+  padding-bottom: 80px;
 }
 
-.chart-container {
-  height: 220px;
-  padding: 16px;
+/* 筛选区域 */
+.filter-section {
+  padding: 12px;
 }
 
-.empty-state {
-  padding: 32px 0;
+.filter-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  display: flex;
+  overflow: hidden;
 }
 
-.table-container {
-  padding: 0 16px 16px 16px;
+.filter-item {
+  flex: 1;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.filter-item:active {
+  background: #f5f6f7;
+}
+
+.filter-label {
+  font-size: 11px;
+  color: #969799;
+}
+
+.filter-value {
+  font-size: 14px;
+  color: #323233;
+  font-weight: 500;
+}
+
+.filter-divider {
+  width: 1px;
+  background: #ebedf0;
+  margin: 12px 0;
+}
+
+/* 章节标题 */
+.section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #323233;
+  padding: 4px 16px 8px;
+}
+
+/* 统计卡片 */
+.stats-section {
+  padding: 0 12px 16px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.stat-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.stat-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.stat-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1989fa;
+  line-height: 1.2;
+  word-break: break-all;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #969799;
+  margin-top: 2px;
+}
+
+/* 图表卡片 */
+.chart-card {
+  margin: 0 12px 16px;
+  background: white;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  min-height: 220px;
+}
+
+.chart-empty {
+  padding: 40px 0;
+}
+
+/* 表格卡片 */
+.table-card {
+  margin: 0 12px 16px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.table-empty {
+  padding: 40px 0;
 }
 
 .stats-table {
   width: 100%;
   border-collapse: collapse;
-  background: white;
-  border-radius: 8px;
-  overflow: hidden;
 }
 
 .stats-table th,
 .stats-table td {
-  padding: 12px;
+  padding: 14px 16px;
   text-align: left;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid #f5f6f7;
 }
 
 .stats-table th {
-  background: #f9fafb;
+  background: #fafafa;
   font-weight: 600;
-  color: #374151;
-  font-size: 14px;
+  color: #323233;
+  font-size: 13px;
 }
 
 .stats-table td {
-  color: #6b7280;
+  color: #646566;
   font-size: 14px;
 }
 
 .stats-table tr:last-child td {
   border-bottom: none;
+}
+
+.stats-table tr:active {
+  background: #f5f6f7;
 }
 </style>

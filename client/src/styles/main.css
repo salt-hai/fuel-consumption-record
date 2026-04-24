@@ -2,15 +2,463 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 全局样式 */
+/* ============ 主题变量 ============ */
+:root {
+  /* 主色调 - 蓝色系 */
+  --color-primary: #1989fa;
+  --color-primary-light: #40a9ff;
+  --color-primary-dark: #096dd9;
+  --color-primary-bg: rgba(25, 137, 250, 0.1);
+
+  /* 辅助色 */
+  --color-success: #07c160;
+  --color-warning: #ff976a;
+  --color-danger: #ee0a24;
+  --color-info: #10aeff;
+
+  /* 中性色 */
+  --color-bg-page: #f7f8fa;
+  --color-bg-card: #ffffff;
+  --color-text-primary: #1c1c1e;
+  --color-text-secondary: #636366;
+  --color-text-tertiary: #8e8e93;
+  --color-border: #ebedf0;
+  --color-border-light: #f5f6f7;
+
+  /* 阴影 */
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.08);
+  --shadow-card-hover: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --shadow-float: 0 4px 20px rgba(25, 137, 250, 0.3);
+
+  /* 圆角 */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+
+  /* 间距 */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 20px;
+  --spacing-xxl: 32px;
+
+  /* 字体 */
+  --font-family-base: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-family-number: "SF Mono", "Roboto Mono", Consolas, monospace;
+
+  /* 字号 */
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-md: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --font-size-2xl: 20px;
+  --font-size-3xl: 24px;
+
+  /* 字重 */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* 行高 */
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+}
+
+/* ============ 全局样式 ============ */
 * {
   -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
+}
+
+/* 现代系统字体栈 */
+:root {
+  --font-family-base: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-family-number: "Inter", "SF Mono", "Roboto Mono", Consolas, monospace;
 }
 
 body {
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--font-family-base);
+  font-size: 15px;
+  line-height: 1.5;
+  letter-spacing: -0.003em;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-page);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "liga" 1, "calt" 1, "tnum" 1;
+  font-variation-settings: "opsz" 14;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+/* ============ Vant 组件样式覆盖 ============ */
+/* 覆盖 Vant 的默认蓝色 */
+:root {
+  --van-primary-color: var(--color-primary);
+  --van-success-color: var(--color-success);
+  --van-warning-color: var(--color-warning);
+  --van-danger-color: var(--color-danger);
+  --van-background-color: var(--color-bg-page);
+  --van-background-2: var(--color-bg-card);
+  --van-card-background: var(--color-bg-card);
+  --van-text-color: var(--color-text-primary);
+  --van-text-color-2: var(--color-text-secondary);
+  --van-text-color-3: var(--color-text-tertiary);
+  --van-border-color: var(--color-border);
+  --van-active-color: var(--color-primary-bg);
+  --van-button-primary-background-color: var(--color-primary);
+  --van-button-primary-border-color: var(--color-primary);
+}
+
+/* Card 组件样式 */
+.van-cell-group {
+  background: transparent;
+}
+
+.van-cell-group--inset {
+  margin: var(--spacing-md);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-bg-card);
+}
+
+.van-cell {
+  background: var(--color-bg-card);
+}
+
+.van-cell::after {
+  border-color: var(--color-border-light);
+}
+
+/* Button 组件样式 */
+.van-button--primary {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.van-button--primary:active {
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+}
+
+/* Floating Action Button */
+.fab-button {
+  position: fixed;
+  right: var(--spacing-lg);
+  bottom: 80px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  box-shadow: var(--shadow-float);
+  border: none;
+  color: white;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 100;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.fab-button:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 10px rgba(25, 137, 250, 0.4);
+}
+
+/* Tabbar 组件样式 */
+.van-tabbar {
+  background: var(--color-bg-card);
+  border-top: 1px solid var(--color-border);
+}
+
+.van-tabbar-item--active {
+  color: var(--color-primary);
+}
+
+/* Field 组件样式 */
+.van-field__control {
+  font-size: 15px;
+}
+
+.van-field__label {
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+/* ============ 通用工具类 ============ */
+.page-container {
+  min-height: 100vh;
+  background-color: var(--color-bg-page);
+  padding-bottom: 60px;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  padding: var(--spacing-md);
+}
+
+.card {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.3s;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-card-hover);
+}
+
+.text-primary {
+  color: var(--color-primary);
+}
+
+.text-secondary {
+  color: var(--color-text-secondary);
+}
+
+.text-tertiary {
+  color: var(--color-text-tertiary);
+}
+
+/* ============ Vant 组件样式覆盖 ============ */
+
+/* Popup 弹窗样式 */
+.van-popup {
+  background-color: var(--color-bg-card);
+}
+
+.van-popup--round {
+  border-radius: 12px;
+}
+
+/* Dialog 对话框样式 */
+.van-dialog {
+  border-radius: 12px;
+}
+
+.van-dialog__header {
+  padding-top: 20px;
+  padding-bottom: 16px;
+}
+
+.van-dialog__message {
+  font-size: 15px;
+  color: var(--color-text-primary);
+}
+
+.van-dialog__confirm,
+.van-dialog__cancel {
+  border-radius: 8px;
+  height: 40px;
+}
+
+.van-dialog__confirm {
+  background: var(--color-primary);
+}
+
+/* Dialog Alert 样式 */
+.van-dialog__message--has-title {
+  text-align: center;
+}
+
+/* Toast 提示样式 */
+.van-toast {
+  border-radius: 8px;
+  padding: 12px 16px;
+}
+
+.van-toast--text {
+  font-size: 14px;
+}
+
+/* Confirm Dialog 确认框 */
+.van-confirm-dialog__header {
+  padding-top: 20px;
+}
+
+.van-confirm-dialog__message {
+  font-size: 15px;
+  color: var(--color-text-primary);
+}
+
+/* Picker 选择器 */
+.van-picker__toolbar {
+  padding: 12px 16px;
+}
+
+.van-picker-column__item {
+  font-size: 16px;
+}
+
+/* DateTimePicker 日期选择器 */
+.van-datetime-picker__toolbar {
+  padding: 12px 16px;
+}
+
+/* SwipeCell 滑动单元格 */
+.van-swipe-cell {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* ActionSheet 动作面板 */
+.van-action-sheet {
+  border-radius: 12px 12px 0 0;
+}
+
+.van-action-sheet__item {
+  font-size: 15px;
+}
+
+/* Notify 通知 */
+.van-notify {
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 14px;
+}
+
+/* Overlay 遮罩层 */
+.van-overlay {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* ============ 现代排版工具类 ============ */
+/* 字体族 */
+.font-base {
+  font-family: var(--font-family-base);
+}
+
+.font-number {
+  font-family: var(--font-family-number);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 字号 */
+.text-xs { font-size: var(--font-size-xs); }
+.text-sm { font-size: var(--font-size-sm); }
+.text-md { font-size: var(--font-size-md); }
+.text-lg { font-size: var(--font-size-lg); }
+.text-xl { font-size: var(--font-size-xl); }
+.text-2xl { font-size: var(--font-size-2xl); }
+.text-3xl { font-size: var(--font-size-3xl); }
+
+/* 字重 */
+.font-normal { font-weight: var(--font-weight-normal); }
+.font-medium { font-weight: var(--font-weight-medium); }
+.font-semibold { font-weight: var(--font-weight-semibold); }
+.font-bold { font-weight: var(--font-weight-bold); }
+
+/* 行高 */
+.leading-tight { line-height: var(--line-height-tight); }
+.leading-normal { line-height: var(--line-height-normal); }
+.leading-relaxed { line-height: var(--line-height-relaxed); }
+
+/* 数字优化 - 使用等宽数字 */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* 现代字体渲染优化 */
+.text-optimize {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 标题样式 */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  color: #111;
+}
+
+h1 { font-size: 28px; }
+h2 { font-size: 24px; }
+h3 { font-size: 20px; }
+h4 { font-size: 18px; }
+h5 { font-size: 16px; }
+h6 { font-size: 14px; }
+
+/* Vant 组件标题优化 */
+.van-nav-bar__title {
+  font-weight: 600;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+}
+
+.popup-header h3 {
+  font-weight: 600;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+}
+
+/* 强调文本 */
+.text-emphasized {
+  font-weight: var(--font-weight-medium);
+  letter-spacing: -0.01em;
+}
+
+/* ============ 现代 Vant 组件字体优化 ============ */
+/* 导航栏 */
+.van-nav-bar__title {
+  font-weight: 600 !important;
+  font-size: 17px !important;
+  letter-spacing: -0.02em !important;
+}
+
+/* 按钮文字 */
+.van-button__text {
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+/* 表单标签 */
+.van-field__label {
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: -0.01em;
+}
+
+/* Cell 标题 */
+.van-cell__title {
+  font-weight: 500;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+}
+
+/* 标签 */
+.van-tag {
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: -0.01em;
+}
+
+/* 数字显示优化 - 使用 Inter 的等宽数字 */
+.stat-value,
+.cost-value,
+.data-number {
+  font-family: var(--font-family-number);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: -0.02em;
 }
