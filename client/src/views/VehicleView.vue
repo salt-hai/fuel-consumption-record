@@ -99,38 +99,64 @@ const onSubmitEdit = async () => {
 </script>
 
 <template>
-  <div class="vehicle-container">
+  <div class="vehicle-page">
     <van-nav-bar title="车辆管理" />
 
+    <!-- 空状态 -->
     <div v-if="vehiclesStore.vehicles.length === 0" class="empty-state">
-      <van-empty description="暂无车辆">
-        <van-button type="primary" size="small" @click="onAdd">
-          添加第一辆车
-        </van-button>
-      </van-empty>
+      <div class="empty-icon">🚗</div>
+      <p class="empty-title">还没有添加车辆</p>
+      <p class="empty-desc">添加第一辆车开始记录油耗吧</p>
+      <van-button type="primary" round size="small" @click="onAdd">
+        添加车辆
+      </van-button>
     </div>
 
+    <!-- 车辆列表 -->
     <div v-else class="vehicle-list">
-      <van-card
+      <div
         v-for="vehicle in vehiclesStore.vehicles"
         :key="vehicle.id"
-        :title="`${vehicle.icon} ${vehicle.name}`"
-        :desc="`${vehicle.brand || ''} ${vehicle.model || ''}`"
+        class="vehicle-card"
       >
-        <template #tags>
-          <van-tag v-if="!vehicle.is_active" type="warning">已停用</van-tag>
-        </template>
-        <template #footer>
-          <van-button size="small" @click="onEdit(vehicle)">编辑</van-button>
-          <van-button size="small" type="danger" @click="onDelete(vehicle)">删除</van-button>
-        </template>
-      </van-card>
+        <div class="vehicle-header">
+          <div class="vehicle-icon">{{ vehicle.icon }}</div>
+          <div class="vehicle-info">
+            <div class="vehicle-name">{{ vehicle.name }}</div>
+            <div class="vehicle-details">{{ vehicle.brand || '' }} {{ vehicle.model || '' }}</div>
+          </div>
+          <van-tag v-if="!vehicle.is_active" type="warning" round>已停用</van-tag>
+        </div>
+        <div class="vehicle-meta">
+          <span v-if="vehicle.plate_number" class="meta-item">
+            <span class="meta-label">车牌</span>
+            <span class="meta-value">{{ vehicle.plate_number }}</span>
+          </span>
+          <span class="meta-item">
+            <span class="meta-label">燃油</span>
+            <span class="meta-value">{{ vehicle.fuel_type }}</span>
+          </span>
+          <span class="meta-item">
+            <span class="meta-label">初始里程</span>
+            <span class="meta-value">{{ vehicle.initial_odometer }} km</span>
+          </span>
+        </div>
+        <div class="vehicle-actions">
+          <van-button size="small" type="primary" round @click="onEdit(vehicle)">
+            编辑
+          </van-button>
+          <van-button size="small" type="danger" plain round @click="onDelete(vehicle)">
+            删除
+          </van-button>
+        </div>
+      </div>
     </div>
 
-    <van-floating-bubble
-      axis="xy"
+    <!-- FAB 添加按钮 -->
+    <van-button
+      round
       icon="plus"
-      magnetic="x"
+      class="fab-button"
       @click="onAdd"
     />
 
@@ -276,19 +302,144 @@ const onSubmitEdit = async () => {
 </template>
 
 <style scoped>
-.vehicle-container {
+.vehicle-page {
   min-height: 100vh;
-  background-color: #f5f7fa;
+  background-color: #f7f8fa;
+  padding-bottom: 80px;
 }
 
+/* 空状态 */
 .empty-state {
-  padding: 60px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  text-align: center;
 }
 
+.empty-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.empty-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #323233;
+  margin: 0 0 8px 0;
+}
+
+.empty-desc {
+  font-size: 14px;
+  color: #969799;
+  margin: 0 0 24px 0;
+}
+
+/* 车辆列表 */
 .vehicle-list {
-  padding: 16px;
+  padding: 12px;
 }
 
+.vehicle-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s;
+}
+
+.vehicle-card:active {
+  transform: scale(0.98);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.vehicle-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.vehicle-icon {
+  font-size: 36px;
+  flex-shrink: 0;
+}
+
+.vehicle-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.vehicle-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #323233;
+  margin-bottom: 2px;
+}
+
+.vehicle-details {
+  font-size: 13px;
+  color: #969799;
+}
+
+.vehicle-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 12px 0;
+  border-top: 1px solid #f5f6f7;
+  border-bottom: 1px solid #f5f6f7;
+  margin-bottom: 12px;
+}
+
+.meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.meta-label {
+  font-size: 11px;
+  color: #969799;
+}
+
+.meta-value {
+  font-size: 13px;
+  color: #323233;
+  font-weight: 500;
+}
+
+.vehicle-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.vehicle-actions .van-button {
+  flex: 1;
+}
+
+/* FAB 按钮 */
+.fab-button {
+  position: fixed;
+  right: 16px;
+  bottom: 76px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1989fa 0%, #096dd9 100%);
+  box-shadow: 0 4px 16px rgba(25, 137, 250, 0.35);
+  border: none;
+  z-index: 100;
+}
+
+.fab-button:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 10px rgba(25, 137, 250, 0.4);
+}
+
+/* 弹窗内容 */
 .dialog-content {
   padding: 20px;
   max-height: 70vh;
@@ -298,16 +449,24 @@ const onSubmitEdit = async () => {
 .dialog-content h3 {
   margin: 0 0 16px 0;
   text-align: center;
+  font-size: 18px;
+  font-weight: 600;
+  color: #323233;
 }
 
 .dialog-content .van-button {
   margin-top: 8px;
 }
 
-.icon-preview {
-  font-size: 24px;
+.dialog-content .van-field {
+  padding: 12px 0;
 }
 
+.icon-preview {
+  font-size: 28px;
+}
+
+/* 图标选择 */
 .icon-picker-content {
   padding: 20px;
 }
@@ -315,6 +474,9 @@ const onSubmitEdit = async () => {
 .icon-picker-content h3 {
   margin: 0 0 16px 0;
   text-align: center;
+  font-size: 18px;
+  font-weight: 600;
+  color: #323233;
 }
 
 .icon-grid {
@@ -330,16 +492,18 @@ const onSubmitEdit = async () => {
   align-items: center;
   justify-content: center;
   font-size: 24px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #ebedf0;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
+  background: white;
 }
 
 .icon-item.selected {
-  background-color: #1989fa;
+  background: linear-gradient(135deg, #1989fa 0%, #096dd9 100%);
   border-color: #1989fa;
   color: white;
+  box-shadow: 0 2px 8px rgba(25, 137, 250, 0.3);
 }
 
 .icon-item:active {
