@@ -131,7 +131,7 @@ const onSubmit = async () => {
 
   submitting.value = true
   // 使用轻量 toast 提示而不是按钮 loading
-  const toast = showToast({
+  const loadingToast = showToast({
     message: isEdit.value ? '保存中...' : '提交中...',
     duration: 0,
     forbidClick: true,
@@ -141,14 +141,15 @@ const onSubmit = async () => {
   try {
     if (isEdit.value) {
       await recordsStore.updateRecord(recordId.value, formData.value as UpdateRecordRequest)
-      toast({ message: '更新成功', type: 'success' })
     } else {
       await recordsStore.createRecord(formData.value as CreateRecordRequest)
-      toast({ message: '添加成功', type: 'success' })
     }
-    router.back()
+    loadingToast.close()
+    showToast({ message: isEdit.value ? '更新成功' : '添加成功', type: 'success' })
+    // 短暂延迟让用户看到成功提示
+    setTimeout(() => router.back(), 300)
   } catch (error) {
-    toast.close()
+    loadingToast.close()
     // 错误已由 API 拦截器自动显示
   } finally {
     submitting.value = false
