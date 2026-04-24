@@ -9,6 +9,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
 from models.token import Token
 from models.user import User
+from models.vehicle import Vehicle
+from models.fuel_record import FuelRecord
 
 
 def hash_token(token: str) -> str:
@@ -99,3 +101,65 @@ async def get_current_user(
     await db.commit()
 
     return user
+
+
+async def get_user_vehicle(
+    vehicle_id: int,
+    user: User,
+    db: AsyncSession
+) -> Vehicle:
+    """
+    获取属于当前用户的车辆，不存在则返回 404
+
+    Args:
+        vehicle_id: 车辆 ID
+        user: 当前用户
+        db: 数据库会话
+
+    Returns:
+        Vehicle 对象
+
+    Raises:
+        HTTPException 404: 车辆不存在或不属于当前用户
+    """
+    result = await db.execute(
+        select(Vehicle).where(Vehicle.id == vehicle_id, Vehicle.user_id == user.id)
+    )
+    vehicle = result.scalar_one_or_none()
+
+    if not vehicle:
+        raise HTTPException(status_code=404, detail="车辆不存在")
+
+    return vehicle
+
+
+async def get_user_record(
+    record_id: int,
+    user: User,
+    db: AsyncSession
+) -> FuelRecord:
+    """
+    获取属于当前用户的加油记录，不存在则返回 404
+
+    Args:
+        record_id: 记录 ID
+        user: 当前用户
+        db: 数据库会话
+
+    Returns:
+        FuelRecord 对象
+
+    Raises:
+        HTTPException 404: 记录不存在或不属于当前用户
+    """
+    result = await db.execute(
+        select(FuelRecord)
+        .join(Vehicle, FuelRecord.vehicle_id == Vehicle.id)
+        .where(FuelRecord.id == record_id, Vehicle.user_id == user.id)
+    )
+    record = result.scalar_one_or_none()
+
+    if not record:
+        raise HTTPException(status_code=404, detail="记录不存在")
+
+    return record

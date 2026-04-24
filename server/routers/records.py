@@ -5,8 +5,10 @@ from typing import Optional
 from database import get_db
 from models.fuel_record import FuelRecord
 from models.vehicle import Vehicle
+from models.user import User
 from schemas.record import RecordCreate, RecordUpdate, RecordResponse, RecordListResponse
 from schemas.common import success_response
+from utils.auth import get_current_user, get_user_record
 
 router = APIRouter(prefix="/v1/records", tags=["加油记录"])
 
@@ -75,6 +77,16 @@ async def calculate_fuel_consumption(
     # 计算油耗
     return (total_volume / distance) * 100
 
+async def validate_vehicle_for_user(vehicle_id: int, user: User, db: AsyncSession) -> Vehicle:
+    """验证车辆属于当前用户"""
+    result = await db.execute(
+        select(Vehicle).where(Vehicle.id == vehicle_id, Vehicle.user_id == user.id)
+    )
+    vehicle = result.scalar_one_or_none()
+    if not vehicle:
+        raise HTTPException(status_code=404, detail="车辆不存在")
+    return vehicle
+
 @router.get("/")
 async def get_records(
     vehicle_id: Optional[int] = Query(None),
@@ -82,11 +94,16 @@ async def get_records(
     page_size: int = Query(20, ge=1, le=100),
     start_date: Optional[str] = Query(None),
     end_date: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    query = select(FuelRecord)
+    """获取当前用户的加油记录列表"""
+    # 构建基础查询（只查询当前用户车辆的记录）
+    query = select(FuelRecord).join(Vehicle, FuelRecord.vehicle_id == Vehicle.id).where(Vehicle.user_id == current_user.id)
 
     if vehicle_id:
+        # 验证车辆属于当前用户
+        await validate_vehicle_for_user(vehicle_id, current_user, db)
         query = query.where(FuelRecord.vehicle_id == vehicle_id)
     if start_date:
         query = query.where(FuelRecord.date >= start_date)
@@ -111,21 +128,24 @@ async def get_records(
     ))
 
 @router.get("/{record_id}/")
-async def get_record(record_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(FuelRecord).where(FuelRecord.id == record_id))
-    record = result.scalar_one_or_none()
-
-    if not record:
-        raise HTTPException(status_code=404, detail="记录不存在")
-
+async def get_record(
+    record_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """获取单条记录（只能访问自己的记录）"""
+    record = await get_user_record(record_id, current_user, db)
     return success_response(RecordResponse.model_validate(record))
 
 @router.post("/")
-async def create_record(data: RecordCreate, db: AsyncSession = Depends(get_db)):
-    # 验证车辆存在
-    result = await db.execute(select(Vehicle).where(Vehicle.id == data.vehicle_id))
-    if not result.scalar_one_or_none():
-        raise HTTPException(status_code=404, detail="车辆不存在")
+async def create_record(
+    data: RecordCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """创建加油记录（只能添加到自己的车辆）"""
+    # 验证车辆属于当前用户
+    vehicle = await validate_vehicle_for_user(data.vehicle_id, current_user, db)
 
     record = FuelRecord(**data.model_dump())
 
@@ -149,13 +169,11 @@ async def create_record(data: RecordCreate, db: AsyncSession = Depends(get_db)):
 async def update_record(
     record_id: int,
     data: RecordUpdate,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(select(FuelRecord).where(FuelRecord.id == record_id))
-    record = result.scalar_one_or_none()
-
-    if not record:
-        raise HTTPException(status_code=404, detail="记录不存在")
+    """更新记录（只能更新自己的记录）"""
+    record = await get_user_record(record_id, current_user, db)
 
     update_data = data.model_dump(exclude_unset=True)
 
@@ -181,12 +199,13 @@ async def update_record(
     return success_response(RecordResponse.model_validate(record), "更新成功")
 
 @router.delete("/{record_id}/")
-async def delete_record(record_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(FuelRecord).where(FuelRecord.id == record_id))
-    record = result.scalar_one_or_none()
-
-    if not record:
-        raise HTTPException(status_code=404, detail="记录不存在")
+async def delete_record(
+    record_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """删除记录（只能删除自己的记录）"""
+    record = await get_user_record(record_id, current_user, db)
 
     await db.delete(record)
     await db.commit()
