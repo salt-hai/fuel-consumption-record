@@ -24,6 +24,7 @@ const summary = ref({
   total_distance: 0,
   avg_consumption: 0,
   latest_consumption: 0,
+  avg_cost_per_km: 0,
 })
 
 const monthlyStats = ref<Array<{
@@ -31,6 +32,11 @@ const monthlyStats = ref<Array<{
   cost: number
   volume: number
   distance: number
+  consumption: number
+}>>([])
+
+const trendStats = ref<Array<{
+  date: string
   consumption: number
 }>>([])
 
@@ -56,13 +62,33 @@ const vehicleColumns = computed(() => {
   }))
 })
 
+// 根据时间范围筛选月数
+const getMonthsCount = (period: string): number | undefined => {
+  switch (period) {
+    case '3month': return 3
+    case '6month': return 6
+    case 'year': return 12
+    case 'all': return undefined
+    default: return undefined
+  }
+}
+
+// 根据时间范围筛选月度数据
+const filterMonthlyData = (data: typeof monthlyStats.value, period: string): typeof monthlyStats.value => {
+  if (period === 'all') return data
+  const months = getMonthsCount(period)
+  if (months === undefined) return data
+  return data.slice(0, months)
+}
+
 // 静默刷新（不显示 loading）
 const loadStatsSilent = async () => {
   const vehicleId = vehiclesStore.currentVehicleId ?? undefined
   try {
-    const [summaryData, monthlyData] = await Promise.all([
+    const [summaryData, monthlyData, trendData] = await Promise.all([
       statsApi.getStatsSummary({ vehicle_id: vehicleId }).catch(() => null),
       statsApi.getMonthlyStats({ vehicle_id: vehicleId }).catch(() => []),
+      statsApi.getConsumptionTrend({ vehicle_id: vehicleId, months: getMonthsCount(periodValue.value) }).catch(() => []),
     ])
     summary.value = summaryData || {
       total_records: 0,
@@ -70,8 +96,10 @@ const loadStatsSilent = async () => {
       total_distance: 0,
       avg_consumption: 0,
       latest_consumption: 0,
+      avg_cost_per_km: 0,
     }
-    monthlyStats.value = monthlyData || []
+    monthlyStats.value = filterMonthlyData(monthlyData || [], periodValue.value)
+    trendStats.value = trendData || []
   } catch (error) {
     console.error('加载统计数据失败:', error)
     summary.value = {
@@ -80,7 +108,10 @@ const loadStatsSilent = async () => {
       total_distance: 0,
       avg_consumption: 0,
       latest_consumption: 0,
+      avg_cost_per_km: 0,
     }
+    monthlyStats.value = []
+    trendStats.value = []
   }
 }
 
@@ -184,6 +215,13 @@ const onSelectPeriod = ({ selectedValues }: any) => {
             <div class="stat-label">最新油耗</div>
           </div>
         </div>
+        <div class="stat-card">
+          <div class="stat-icon">💵</div>
+          <div class="stat-content">
+            <div class="stat-value">¥{{ summary.avg_cost_per_km }}</div>
+            <div class="stat-label">平均油费</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -205,9 +243,9 @@ const onSelectPeriod = ({ selectedValues }: any) => {
     <div class="section-title">📈 油耗趋势</div>
     <div class="chart-card">
       <StatsChart
-        v-if="monthlyStats.length > 0"
+        v-if="trendStats.length > 0"
         type="line"
-        :data="monthlyStats.map(s => ({ date: s.month, consumption: s.consumption }))"
+        :data="trendStats"
         :loading="loading"
       />
       <div v-else-if="!loading" class="chart-empty">

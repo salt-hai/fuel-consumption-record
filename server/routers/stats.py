@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query, HTTPException
-from sqlalchemy import select, func, and_, case
+from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Optional
+from typing import Optional, List, Tuple
 from database import get_db
 from models.fuel_record import FuelRecord
 from models.vehicle import Vehicle
@@ -21,6 +21,135 @@ async def validate_vehicle_for_user(vehicle_id: int, user: User, db: AsyncSessio
         raise HTTPException(status_code=404, detail="车辆不存在")
     return vehicle
 
+
+async def get_all_records(
+    db: AsyncSession,
+    vehicle_id: Optional[int],
+    current_user: User
+) -> List[FuelRecord]:
+    """获取用户所有加油记录，按日期和里程排序"""
+    query = select(FuelRecord).join(Vehicle, FuelRecord.vehicle_id == Vehicle.id).where(
+        Vehicle.user_id == current_user.id
+    )
+
+    if vehicle_id:
+        await validate_vehicle_for_user(vehicle_id, current_user, db)
+        query = query.where(FuelRecord.vehicle_id == vehicle_id)
+
+    query = query.order_by(FuelRecord.odometer.asc())
+    result = await db.execute(query)
+    return list(result.scalars().all())
+
+
+def calculate_consumption_for_month(
+    records: List[FuelRecord],
+    year: int,
+    month: int
+) -> Tuple[float, float, float, float, bool]:
+    """
+    计算指定月份的统计数据
+
+    使用累积法：只统计该月内完成加满周期的油耗
+    - 找出该月所有加满记录
+    - 对每个加满记录，找到上一次加满，计算油耗
+    - 如果上一次加满是上个月，按里程比例分摊
+
+    返回: (花费, 油量, 里程, 油耗, 是否有完整周期)
+    """
+    month_prefix = f"{year}-{month:02d}"
+
+    # 找出所有加满记录及其位置
+    full_tank_indices = [i for i, r in enumerate(records) if r.full_tank]
+
+    total_cost = 0.0
+    total_volume = 0.0
+    total_distance_in_month = 0.0
+    total_consumption = 0.0
+    consumption_count = 0
+    has_full_cycle = False
+
+    # 找出该月第一条和最后一条记录的索引
+    month_first_idx = None
+    month_last_idx = None
+    for i, r in enumerate(records):
+        if r.date.startswith(month_prefix):
+            if month_first_idx is None:
+                month_first_idx = i
+            month_last_idx = i
+
+    if month_first_idx is None:
+        return 0, 0, 0, 0, False  # 该月没有记录
+
+    # 计算该月里程范围
+    first_record = records[month_first_idx]
+    last_record = records[month_last_idx]
+    month_odometer_start = first_record.odometer
+    month_odometer_end = last_record.odometer
+
+    # 计算该月总花费和总油量
+    for i in range(month_first_idx, month_last_idx + 1):
+        r = records[i]
+        total_cost += r.total_cost
+        total_volume += r.volume
+
+    total_distance_in_month = month_odometer_end - month_odometer_start
+
+    # 计算油耗：对于该月内的每个加满记录
+    for idx in full_tank_indices:
+        record = records[idx]
+
+        # 只处理该月的加满记录
+        if not record.date.startswith(month_prefix):
+            continue
+
+        if idx == 0:
+            continue  # 首次加满，无法计算
+
+        prev_record = records[idx - 1]
+
+        # 计算累积数据：从上次加满到本次加满
+        distance = record.odometer - prev_record.odometer
+        if distance <= 0:
+            continue
+
+        # 计算两次加满之间的累积油量
+        between_volume = sum(
+            r.volume for r in records
+            if prev_record.odometer < r.odometer <= record.odometer
+        )
+
+        # 计算该周期中属于该月的里程
+        cycle_start = prev_record.odometer
+        cycle_end = record.odometer
+
+        # 计算该周期在当前月份内的里程
+        month_start = max(cycle_start, month_odometer_start)
+        month_end = min(cycle_end, month_odometer_end)
+        distance_in_month = max(0, month_end - month_start)
+
+        if distance_in_month <= 0:
+            continue
+
+        # 按里程比例计算该月的油耗
+        consumption_rate = (between_volume / distance) * 100  # L/100km
+        consumption_in_month = (distance_in_month / 100) * consumption_rate
+
+        total_consumption += consumption_in_month
+        consumption_count += 1
+        has_full_cycle = True
+
+    # 如果有完整周期，用累积油耗计算平均油耗
+    if consumption_count > 0 and total_distance_in_month > 0:
+        avg_consumption = (total_consumption / total_distance_in_month) * 100
+    else:
+        # 没有完整周期，标记为不完整
+        has_full_cycle = False
+        # 使用近似值但可能偏高/偏低
+        avg_consumption = (total_volume / total_distance_in_month * 100) if total_distance_in_month > 0 else 0
+
+    return total_cost, total_volume, total_distance_in_month, avg_consumption, has_full_cycle
+
+
 @router.get("/summary/")
 async def get_summary(
     vehicle_id: Optional[int] = Query(None),
@@ -28,16 +157,7 @@ async def get_summary(
     db: AsyncSession = Depends(get_db)
 ):
     """获取当前用户的统计汇总"""
-    # 只查询当前用户车辆的记录
-    query = select(FuelRecord).join(Vehicle, FuelRecord.vehicle_id == Vehicle.id).where(Vehicle.user_id == current_user.id)
-
-    if vehicle_id:
-        # 验证车辆属于当前用户
-        await validate_vehicle_for_user(vehicle_id, current_user, db)
-        query = query.where(FuelRecord.vehicle_id == vehicle_id)
-
-    result = await db.execute(query)
-    records = result.scalars().all()
+    records = await get_all_records(db, vehicle_id, current_user)
 
     if not records:
         return success_response({
@@ -45,76 +165,77 @@ async def get_summary(
             "total_cost": 0,
             "total_distance": 0,
             "avg_consumption": 0,
-            "latest_consumption": 0
+            "latest_consumption": 0,
+            "avg_cost_per_km": 0
         })
 
     total_cost = sum(r.total_cost for r in records)
+    total_volume = sum(r.volume for r in records)
 
-    # 计算总里程 (最大里程 - 最小里程)
+    # 计算总里程
     min_odometer = min(r.odometer for r in records)
     max_odometer = max(r.odometer for r in records)
     total_distance = max_odometer - min_odometer
 
-    # 计算平均油耗
-    consumptions = [r.fuel_consumption for r in records if r.fuel_consumption]
-    avg_consumption = sum(consumptions) / len(consumptions) if consumptions else 0
+    # 计算平均油耗（整体）
+    avg_consumption = (total_volume / total_distance * 100) if total_distance > 0 else 0
 
-    # 最新油耗
-    latest_record = max(records, key=lambda r: r.date)
-    latest_consumption = latest_record.fuel_consumption or 0
+    # 获取最新加满记录的油耗
+    latest_consumption = avg_consumption
+    for r in reversed(records):
+        if r.full_tank and r.fuel_consumption is not None:
+            latest_consumption = r.fuel_consumption
+            break
+
+    # 平均油费 (元/公里)
+    avg_cost_per_km = round(total_cost / total_distance, 2) if total_distance > 0 else 0
 
     return success_response({
         "total_records": len(records),
         "total_cost": round(total_cost, 2),
         "total_distance": total_distance,
         "avg_consumption": round(avg_consumption, 1),
-        "latest_consumption": round(latest_consumption, 1)
+        "latest_consumption": round(latest_consumption, 1),
+        "avg_cost_per_km": avg_cost_per_km
     })
+
 
 @router.get("/monthly/")
 async def get_monthly_stats(
     vehicle_id: Optional[int] = Query(None),
-    period: Optional[str] = Query(None, description="统计周期: month或year"),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """获取当前用户的月度统计"""
-    # 只查询当前用户车辆的记录
-    base_query = select(FuelRecord).join(Vehicle, FuelRecord.vehicle_id == Vehicle.id).where(Vehicle.user_id == current_user.id)
+    records = await get_all_records(db, vehicle_id, current_user)
 
-    if vehicle_id:
-        # 验证车辆属于当前用户
-        await validate_vehicle_for_user(vehicle_id, current_user, db)
-        base_query = base_query.where(FuelRecord.vehicle_id == vehicle_id)
+    if not records:
+        return success_response([])
 
-    query = select(
-        func.substr(FuelRecord.date, 1, 7).label('month'),
-        func.sum(FuelRecord.total_cost).label('cost'),
-        func.sum(FuelRecord.volume).label('volume'),
-        func.max(FuelRecord.odometer).label('max_odometer'),
-        func.min(FuelRecord.odometer).label('min_odometer')
-    ).select_from(base_query.subquery())
-
-    query = query.group_by(func.substr(FuelRecord.date, 1, 7))
-    query = query.order_by(func.substr(FuelRecord.date, 1, 7).desc())
-
-    result = await db.execute(query)
-    rows = result.all()
+    # 获取所有月份
+    months = set()
+    for r in records:
+        months.add(r.date[:7])
 
     stats = []
-    for row in rows:
-        distance = row.max_odometer - row.min_odometer if row.max_odometer and row.min_odometer else 0
-        consumption = (row.volume / distance * 100) if distance > 0 and row.volume else 0
+    for month_str in sorted(months, reverse=True):
+        year = int(month_str[:4])
+        month = int(month_str[5:7])
+
+        cost, volume, distance, consumption, _ = calculate_consumption_for_month(
+            records, year, month
+        )
 
         stats.append({
-            "month": row.month,
-            "cost": round(row.cost, 2) if row.cost else 0,
-            "volume": round(row.volume, 2) if row.volume else 0,
+            "month": month_str,
+            "cost": round(cost, 2),
+            "volume": round(volume, 2),
             "distance": distance,
             "consumption": round(consumption, 1)
         })
 
     return success_response(stats)
+
 
 @router.get("/trend/")
 async def get_consumption_trend(
@@ -123,30 +244,26 @@ async def get_consumption_trend(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """获取当前用户的油耗趋势"""
-    # 只查询当前用户车辆的记录
-    query = select(FuelRecord).join(Vehicle, FuelRecord.vehicle_id == Vehicle.id).where(
-        Vehicle.user_id == current_user.id,
-        FuelRecord.fuel_consumption.isnot(None)
-    )
+    """获取当前用户的油耗趋势（按月统计）"""
+    records = await get_all_records(db, vehicle_id, current_user)
 
-    if vehicle_id:
-        # 验证车辆属于当前用户
-        await validate_vehicle_for_user(vehicle_id, current_user, db)
-        query = query.where(FuelRecord.vehicle_id == vehicle_id)
+    if not records:
+        return success_response([])
 
-    query = query.order_by(FuelRecord.date.asc())
-    query = query.limit(months)
+    # 获取所有月份
+    all_months = set(r.date[:7] for r in records)
+    sorted_months = sorted(all_months, reverse=True)[:months]
 
-    result = await db.execute(query)
-    records = result.scalars().all()
+    trend = []
+    for month_str in reversed(sorted_months):
+        year = int(month_str[:4])
+        month = int(month_str[5:7])
 
-    trend = [
-        {
-            "date": r.date,
-            "consumption": round(r.fuel_consumption, 1) if r.fuel_consumption else 0
-        }
-        for r in records
-    ]
+        _, _, _, consumption, _ = calculate_consumption_for_month(records, year, month)
+
+        trend.append({
+            "date": month_str,
+            "consumption": round(consumption, 1)
+        })
 
     return success_response(trend)

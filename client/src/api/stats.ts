@@ -6,6 +6,7 @@ export interface StatsSummary {
   total_distance: number
   avg_consumption: number
   latest_consumption: number
+  avg_cost_per_km: number
 }
 
 export interface MonthlyStats {
