@@ -69,11 +69,42 @@ const onExport = async (type: 'csv' | 'excel') => {
   showToast({ message: '导出中...', type: 'loading' })
   try {
     const vehicleId = vehiclesStore.currentVehicleId
-    const url = `/api/v1/export/${type}?vehicle_id=${vehicleId}`
-    window.open(url, '_blank')
+    const token = localStorage.getItem('auth_token')
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
+    const url = `${baseUrl}/v1/export/${type}?vehicle_id=${vehicleId}`
+
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+
+    if (!response.ok) {
+      throw new Error('导出失败')
+    }
+
+    // 获取文件名
+    const contentDisposition = response.headers.get('Content-Disposition')
+    let filename = `fuel_records_${type}.${type === 'csv' ? 'csv' : 'xlsx'}`
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename=(.+)/)
+      if (match) filename = match[1].replace(/"/g, '')
+    }
+
+    // 创建 blob URL 并下载
+    const blob = await response.blob()
+    const blobUrl = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = blobUrl
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(blobUrl)
+
     showToast({ message: '导出成功', type: 'success' })
-  } catch {
-    // 错误已由 API 拦截器自动显示
+  } catch (error) {
+    showToast({ message: error?.toString?.() || '导出失败', type: 'fail' })
   }
 }
 
