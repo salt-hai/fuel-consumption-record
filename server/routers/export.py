@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from typing import Optional
 from datetime import datetime
 import csv
@@ -39,6 +40,7 @@ async def get_export_data(
         query = query.where(FuelRecord.date <= end_date)
 
     query = query.order_by(FuelRecord.date.desc())
+    query = query.options(selectinload(FuelRecord.vehicle))
     result = await db.execute(query)
     return result.scalars().all()
 
@@ -57,11 +59,13 @@ async def export_csv(
     writer = csv.writer(output)
 
     # 写入表头
-    writer.writerow(["日期", "里程(km)", "加油量(L)", "总金额(元)", "单价(元/L)", "是否加满", "加油站", "油耗(L/100km)", "备注"])
+    writer.writerow(["车牌号", "车辆名称", "日期", "里程(km)", "加油量(L)", "总金额(元)", "单价(元/L)", "是否加满", "加油站", "油耗(L/100km)", "备注"])
 
     # 写入数据
     for r in records:
         writer.writerow([
+            r.vehicle.plate_number if r.vehicle else "",
+            r.vehicle.name if r.vehicle else "",
             r.date,
             r.odometer,
             r.volume,
@@ -101,7 +105,7 @@ async def export_excel(
     ws.title = "加油记录"
 
     # 表头
-    headers = ["日期", "里程(km)", "加油量(L)", "总金额(元)", "单价(元/L)", "是否加满", "加油站", "油耗(L/100km)", "备注"]
+    headers = ["车牌号", "车辆名称", "日期", "里程(km)", "加油量(L)", "总金额(元)", "单价(元/L)", "是否加满", "加油站", "油耗(L/100km)", "备注"]
     ws.append(headers)
 
     # 表头样式
@@ -117,6 +121,8 @@ async def export_excel(
     # 数据行
     for r in records:
         ws.append([
+            r.vehicle.plate_number if r.vehicle else "",
+            r.vehicle.name if r.vehicle else "",
             r.date,
             r.odometer,
             r.volume,
@@ -129,15 +135,17 @@ async def export_excel(
         ])
 
     # 调整列宽
-    ws.column_dimensions['A'].width = 12
-    ws.column_dimensions['B'].width = 12
-    ws.column_dimensions['C'].width = 10
-    ws.column_dimensions['D'].width = 10
-    ws.column_dimensions['E'].width = 10
-    ws.column_dimensions['F'].width = 10
-    ws.column_dimensions['G'].width = 15
-    ws.column_dimensions['H'].width = 12
-    ws.column_dimensions['I'].width = 20
+    ws.column_dimensions['A'].width = 12  # 车牌号
+    ws.column_dimensions['B'].width = 12  # 车辆名称
+    ws.column_dimensions['C'].width = 12  # 日期
+    ws.column_dimensions['D'].width = 12  # 里程
+    ws.column_dimensions['E'].width = 10  # 加油量
+    ws.column_dimensions['F'].width = 10  # 总金额
+    ws.column_dimensions['G'].width = 10  # 单价
+    ws.column_dimensions['H'].width = 10  # 是否加满
+    ws.column_dimensions['I'].width = 15  # 加油站
+    ws.column_dimensions['J'].width = 12  # 油耗
+    ws.column_dimensions['K'].width = 20  # 备注
 
     # 保存到内存
     output = io.BytesIO()
