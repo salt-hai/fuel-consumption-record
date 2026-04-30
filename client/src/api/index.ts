@@ -101,7 +101,7 @@ rawInstance.interceptors.response.use(
       }
 
       // 提取错误消息
-      let errorMessage = data?.message || data?.detail || ERROR_MESSAGES[status] || '请求失败'
+      const errorMessage = data?.message || data?.detail || ERROR_MESSAGES[status] || '请求失败'
 
       // 自动显示错误提示（除非是静默请求）
       const isSilent = error.config?.headers?.['X-Silent-Error']

@@ -179,10 +179,15 @@ const onSelectVehicle = ({ selectedValues }: any) => {
       @click-left="router.back()"
     />
 
-    <van-form @submit="onSubmit" class="form-content">
+    <van-form
+      class="form-content"
+      @submit="onSubmit"
+    >
       <!-- 基本信息 -->
       <div class="form-section">
-        <div class="section-header">基本信息</div>
+        <div class="section-header">
+          基本信息
+        </div>
 
         <div class="form-card">
           <van-field
@@ -215,7 +220,10 @@ const onSelectVehicle = ({ selectedValues }: any) => {
             :rules="[{ required: true, message: '请输入里程' }]"
           >
             <template #extra>
-              <span v-if="!isEdit && lastOdometer > 0" class="hint">
+              <span
+                v-if="!isEdit && lastOdometer > 0"
+                class="hint"
+              >
                 上次: {{ lastOdometer }} km
               </span>
             </template>
@@ -227,7 +235,10 @@ const onSelectVehicle = ({ selectedValues }: any) => {
       <div class="form-section">
         <div class="section-header">
           加油信息
-          <span class="section-toggle" @click="showCalcInfo = !showCalcInfo">
+          <span
+            class="section-toggle"
+            @click="showCalcInfo = !showCalcInfo"
+          >
             {{ showCalcInfo ? '收起' : '计算说明' }}
             <van-icon :name="showCalcInfo ? 'arrow-up' : 'arrow-down'" />
           </span>
@@ -262,22 +273,33 @@ const onSelectVehicle = ({ selectedValues }: any) => {
             suffix="元/L"
           />
 
-          <van-field name="full_tank" label="是否加满">
+          <van-field
+            name="full_tank"
+            label="是否加满"
+          >
             <template #input>
-              <van-switch v-model="formData.full_tank" size="20" />
+              <van-switch
+                v-model="formData.full_tank"
+                size="20"
+              />
             </template>
           </van-field>
         </div>
 
         <!-- 油耗计算说明 -->
-        <div v-if="showCalcInfo" class="calc-card">
+        <div
+          v-if="showCalcInfo"
+          class="calc-card"
+        >
           <div class="calc-content">
             <div class="calc-formula">
               <span class="formula-label">公式：</span>
               <span class="formula-text">油耗 = 累积加油量 ÷ 累积里程 × 100</span>
             </div>
             <div class="calc-example">
-              <p class="example-title">📝 举例说明：</p>
+              <p class="example-title">
+                📝 举例说明：
+              </p>
               <div class="example-item">
                 <span class="example-label">第1次加满</span>
                 <span class="example-value">1000km · 40L</span>
@@ -301,7 +323,9 @@ const onSelectVehicle = ({ selectedValues }: any) => {
 
       <!-- 其他信息 -->
       <div class="form-section">
-        <div class="section-header">其他信息（可选）</div>
+        <div class="section-header">
+          其他信息（可选）
+        </div>
 
         <div class="form-card">
           <van-field
@@ -338,7 +362,11 @@ const onSelectVehicle = ({ selectedValues }: any) => {
     </van-form>
 
     <!-- 车辆选择弹窗 -->
-    <van-popup v-model:show="showVehiclePicker" position="bottom" round>
+    <van-popup
+      v-model:show="showVehiclePicker"
+      position="bottom"
+      round
+    >
       <van-picker
         :columns="vehicleColumns"
         :model-value="vehiclePickerValue"
@@ -348,7 +376,11 @@ const onSelectVehicle = ({ selectedValues }: any) => {
     </van-popup>
 
     <!-- 日期选择弹窗 -->
-    <van-popup v-model:show="showDatePicker" position="bottom" round>
+    <van-popup
+      v-model:show="showDatePicker"
+      position="bottom"
+      round
+    >
       <van-date-picker
         :model-value="currentDateValue"
         :max-date="new Date()"

@@ -40,7 +40,11 @@ const onTabChange = (index: number) => {
   <div class="layout-container">
     <router-view />
 
-    <van-tabbar v-model="activeTab" @change="onTabChange" class="tab-bar">
+    <van-tabbar
+      v-model="activeTab"
+      class="tab-bar"
+      @change="onTabChange"
+    >
       <van-tabbar-item
         v-for="tab in tabs"
         :key="tab.path"

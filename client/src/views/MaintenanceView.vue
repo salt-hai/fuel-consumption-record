@@ -187,7 +187,10 @@ const vehicleName = computed(() => {
     </van-nav-bar>
 
     <!-- 即将到期提醒 -->
-    <div v-if="upcoming.length > 0" class="upcoming-section">
+    <div
+      v-if="upcoming.length > 0"
+      class="upcoming-section"
+    >
       <van-notice-bar
         left-icon="volume-o"
         :text="`有 ${upcoming.length} 个保养项目即将到期`"
@@ -196,27 +199,52 @@ const vehicleName = computed(() => {
       />
     </div>
 
-    <van-pull-refresh v-model="loading" @refresh="loadMaintenances">
-      <div v-if="filteredMaintenances.length === 0" class="empty-state">
+    <van-pull-refresh
+      v-model="loading"
+      @refresh="loadMaintenances"
+    >
+      <div
+        v-if="filteredMaintenances.length === 0"
+        class="empty-state"
+      >
         <van-empty description="暂无保养记录">
-          <van-button type="primary" size="small" @click="onAdd">
+          <van-button
+            type="primary"
+            size="small"
+            @click="onAdd"
+          >
             添加第一条记录
           </van-button>
         </van-empty>
       </div>
 
       <div v-else>
-        <div v-for="item in filteredMaintenances" :key="item.id" class="record-card">
+        <div
+          v-for="item in filteredMaintenances"
+          :key="item.id"
+          class="record-card"
+        >
           <div class="record-header">
             <div class="record-type">
               <van-tag :type="isUpcoming(item) ? 'warning' : 'primary'">
                 {{ item.maintenance_type }}
               </van-tag>
-              <van-tag v-if="isOverdue(item)" type="danger">已到期</van-tag>
+              <van-tag
+                v-if="isOverdue(item)"
+                type="danger"
+              >
+                已到期
+              </van-tag>
             </div>
             <div class="record-actions">
-              <van-icon name="edit-o" @click="onEdit(item)" />
-              <van-icon name="delete-o" @click="onDelete(item.id)" />
+              <van-icon
+                name="edit-o"
+                @click="onEdit(item)"
+              />
+              <van-icon
+                name="delete-o"
+                @click="onDelete(item.id)"
+              />
             </div>
           </div>
           <div class="record-info">
@@ -228,20 +256,35 @@ const vehicleName = computed(() => {
               <span class="label">里程:</span>
               <span class="value">{{ item.odometer }} km</span>
             </div>
-            <div v-if="item.cost" class="info-row">
+            <div
+              v-if="item.cost"
+              class="info-row"
+            >
               <span class="label">费用:</span>
               <span class="value">¥{{ item.cost }}</span>
             </div>
-            <div v-if="item.notes" class="info-row">
+            <div
+              v-if="item.notes"
+              class="info-row"
+            >
               <span class="label">备注:</span>
               <span class="value">{{ item.notes }}</span>
             </div>
-            <div v-if="item.next_maintenance_odometer || item.next_maintenance_date" class="next-maintenance">
+            <div
+              v-if="item.next_maintenance_odometer || item.next_maintenance_date"
+              class="next-maintenance"
+            >
               <span class="next-label">下次保养:</span>
-              <span v-if="item.next_maintenance_odometer" class="next-value">
+              <span
+                v-if="item.next_maintenance_odometer"
+                class="next-value"
+              >
                 {{ item.next_maintenance_odometer }} km
               </span>
-              <span v-if="item.next_maintenance_date" class="next-value">
+              <span
+                v-if="item.next_maintenance_date"
+                class="next-value"
+              >
                 {{ item.next_maintenance_date }}
               </span>
             </div>
@@ -267,9 +310,15 @@ const vehicleName = computed(() => {
       <div class="popup-content">
         <div class="popup-header">
           <h3>{{ editingRecord ? '编辑' : '添加' }}保养记录</h3>
-          <van-icon name="cross" @click="showFormDialog = false" />
+          <van-icon
+            name="cross"
+            @click="showFormDialog = false"
+          />
         </div>
-        <van-form @submit="onSubmit" class="popup-form">
+        <van-form
+          class="popup-form"
+          @submit="onSubmit"
+        >
           <van-field
             :value="vehicleName"
             label="车辆"
@@ -285,8 +334,8 @@ const vehicleName = computed(() => {
             placeholder="请选择类型"
             readonly
             is-link
-            @click="showTypePicker = true"
             :rules="[{ required: true, message: '请选择保养类型' }]"
+            @click="showTypePicker = true"
           />
 
           <van-field
@@ -296,8 +345,8 @@ const vehicleName = computed(() => {
             placeholder="请选择日期"
             readonly
             is-link
-            @click="showDatePicker = true"
             :rules="[{ required: true, message: '请选择日期' }]"
+            @click="showDatePicker = true"
           />
 
           <van-field
@@ -329,10 +378,19 @@ const vehicleName = computed(() => {
           />
 
           <div class="popup-actions">
-            <van-button round block @click="showFormDialog = false">
+            <van-button
+              round
+              block
+              @click="showFormDialog = false"
+            >
               取消
             </van-button>
-            <van-button round block type="primary" native-type="submit">
+            <van-button
+              round
+              block
+              type="primary"
+              native-type="submit"
+            >
               {{ editingRecord ? '保存' : '添加' }}
             </van-button>
           </div>
@@ -341,7 +399,11 @@ const vehicleName = computed(() => {
     </van-popup>
 
     <!-- 保养类型选择弹窗 -->
-    <van-popup v-model:show="showTypePicker" position="bottom" round>
+    <van-popup
+      v-model:show="showTypePicker"
+      position="bottom"
+      round
+    >
       <van-picker
         :columns="maintenanceTypes.map(t => ({ text: t, value: t }))"
         @confirm="(val: any) => { formData.maintenance_type = val.selectedValues[0]; showTypePicker = false }"
@@ -350,7 +412,11 @@ const vehicleName = computed(() => {
     </van-popup>
 
     <!-- 日期选择弹窗 -->
-    <van-popup v-model:show="showDatePicker" position="bottom" round>
+    <van-popup
+      v-model:show="showDatePicker"
+      position="bottom"
+      round
+    >
       <van-date-picker
         v-model="currentDateValue"
         :min-date="new Date(2020, 0, 1)"

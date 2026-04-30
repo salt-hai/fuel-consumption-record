@@ -94,12 +94,19 @@ const toggleMode = () => {
   <div class="login-container">
     <div class="login-card">
       <div class="logo-section">
-        <h1 class="title">油耗记录</h1>
-        <p class="subtitle">轻松记录车辆加油数据</p>
+        <h1 class="title">
+          油耗记录
+        </h1>
+        <p class="subtitle">
+          轻松记录车辆加油数据
+        </p>
       </div>
 
       <!-- 登录表单 -->
-      <van-form v-if="isLogin" @submit="handleLogin">
+      <van-form
+        v-if="isLogin"
+        @submit="handleLogin"
+      >
         <van-cell-group inset>
           <van-field
             v-model="loginForm.email"
@@ -132,12 +139,18 @@ const toggleMode = () => {
 
         <div class="toggle-mode">
           还没有账号？
-          <span class="link" @click="toggleMode">立即注册</span>
+          <span
+            class="link"
+            @click="toggleMode"
+          >立即注册</span>
         </div>
       </van-form>
 
       <!-- 注册表单 -->
-      <van-form v-else @submit="handleRegister">
+      <van-form
+        v-else
+        @submit="handleRegister"
+      >
         <van-cell-group inset>
           <van-field
             v-model="registerForm.email"
@@ -186,7 +199,10 @@ const toggleMode = () => {
 
         <div class="toggle-mode">
           已有账号？
-          <span class="link" @click="toggleMode">立即登录</span>
+          <span
+            class="link"
+            @click="toggleMode"
+          >立即登录</span>
         </div>
       </van-form>
     </div>

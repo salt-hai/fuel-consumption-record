@@ -116,27 +116,54 @@ const onVehicleSelect = ({ selectedValues }: { selectedValues: number[] }) => {
   <div class="records-page">
     <van-nav-bar title="加油记录">
       <template #right>
-        <div v-if="currentVehicle" class="nav-vehicle" @click="openVehiclePicker">
+        <div
+          v-if="currentVehicle"
+          class="nav-vehicle"
+          @click="openVehiclePicker"
+        >
           <span class="vehicle-icon">{{ currentVehicle.icon }}</span>
           <span class="vehicle-name">{{ currentVehicle.name }}</span>
-          <van-icon name="arrow-down" size="12" />
+          <van-icon
+            name="arrow-down"
+            size="12"
+          />
         </div>
       </template>
     </van-nav-bar>
 
-    <van-pull-refresh v-model="loading" @refresh="onRefresh">
+    <van-pull-refresh
+      v-model="loading"
+      @refresh="onRefresh"
+    >
       <!-- 空状态 -->
-      <div v-if="records.length === 0" class="empty-state">
-        <div class="empty-icon">⛽</div>
-        <p class="empty-title">还没有加油记录</p>
-        <p class="empty-desc">添加第一条记录开始追踪油耗吧</p>
-        <van-button type="primary" round size="small" @click="onAdd">
+      <div
+        v-if="records.length === 0"
+        class="empty-state"
+      >
+        <div class="empty-icon">
+          ⛽
+        </div>
+        <p class="empty-title">
+          还没有加油记录
+        </p>
+        <p class="empty-desc">
+          添加第一条记录开始追踪油耗吧
+        </p>
+        <van-button
+          type="primary"
+          round
+          size="small"
+          @click="onAdd"
+        >
           添加记录
         </van-button>
       </div>
 
       <!-- 记录列表 -->
-      <div v-else class="records-list">
+      <div
+        v-else
+        class="records-list"
+      >
         <van-swipe-cell
           v-for="(record, index) in records"
           :key="record.id"
@@ -148,7 +175,11 @@ const onVehicleSelect = ({ selectedValues }: { selectedValues: number[] }) => {
           >
             <div class="record-header">
               <span class="record-date">{{ record.date }}</span>
-              <span v-if="record.fuel_consumption" class="record-consumption" :class="`consumption-${getConsumptionLevel(record.fuel_consumption)}`">
+              <span
+                v-if="record.fuel_consumption"
+                class="record-consumption"
+                :class="`consumption-${getConsumptionLevel(record.fuel_consumption)}`"
+              >
                 {{ formatConsumption(record.fuel_consumption) }}
               </span>
             </div>
@@ -156,7 +187,11 @@ const onVehicleSelect = ({ selectedValues }: { selectedValues: number[] }) => {
             <div class="record-station">
               <span class="station-icon">⛽</span>
               <span class="station-name">{{ record.gas_station || '加油站' }}</span>
-              <van-tag v-if="record.full_tank" type="success" round>
+              <van-tag
+                v-if="record.full_tank"
+                type="success"
+                round
+              >
                 <van-icon name="passed" />
                 已加满
               </van-tag>
@@ -166,14 +201,20 @@ const onVehicleSelect = ({ selectedValues }: { selectedValues: number[] }) => {
               <div class="detail-item">
                 <span class="detail-icon">📍</span>
                 <span class="detail-value">{{ record.odometer.toLocaleString() }} km</span>
-                <span v-if="getOdometerDelta(index) > 0" class="detail-delta">
+                <span
+                  v-if="getOdometerDelta(index) > 0"
+                  class="detail-delta"
+                >
                   +{{ getOdometerDelta(index) }}
                 </span>
               </div>
               <div class="detail-item">
                 <span class="detail-icon">⛽</span>
                 <span class="detail-value">{{ record.volume }} L</span>
-                <span v-if="record.unit_price" class="detail-price">
+                <span
+                  v-if="record.unit_price"
+                  class="detail-price"
+                >
                   ¥{{ record.unit_price }}/L
                 </span>
               </div>
@@ -184,7 +225,10 @@ const onVehicleSelect = ({ selectedValues }: { selectedValues: number[] }) => {
                 <span class="cost-label">花费</span>
                 <span class="cost-value">{{ formatMoney(record.total_cost) }}</span>
               </div>
-              <van-icon name="arrow" class="arrow-icon" />
+              <van-icon
+                name="arrow"
+                class="arrow-icon"
+              />
             </div>
           </div>
 
@@ -210,7 +254,11 @@ const onVehicleSelect = ({ selectedValues }: { selectedValues: number[] }) => {
     />
 
     <!-- 车辆选择器 -->
-    <van-popup v-model:show="showVehiclePicker" position="bottom" round>
+    <van-popup
+      v-model:show="showVehiclePicker"
+      position="bottom"
+      round
+    >
       <van-picker
         :columns="vehicleColumns"
         :model-value="vehiclePickerValue"

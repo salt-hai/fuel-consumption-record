@@ -115,17 +115,34 @@ const addRecord = () => {
         @click-right="showVehiclePicker = true"
       >
         <template #right>
-          <van-icon name="arrow-down" color="#1989fa" />
+          <van-icon
+            name="arrow-down"
+            color="#1989fa"
+          />
         </template>
       </van-nav-bar>
     </van-sticky>
 
     <!-- 无车辆时显示提示 -->
-    <div v-if="!currentVehicle && !loading" class="empty-vehicle">
-      <div class="empty-icon">🚗</div>
-      <p class="empty-title">还没有添加车辆</p>
-      <p class="empty-desc">添加第一辆车开始记录油耗吧</p>
-      <van-button type="primary" round size="small" @click="router.push('/vehicles')">
+    <div
+      v-if="!currentVehicle && !loading"
+      class="empty-vehicle"
+    >
+      <div class="empty-icon">
+        🚗
+      </div>
+      <p class="empty-title">
+        还没有添加车辆
+      </p>
+      <p class="empty-desc">
+        添加第一辆车开始记录油耗吧
+      </p>
+      <van-button
+        type="primary"
+        round
+        size="small"
+        @click="router.push('/vehicles')"
+      >
         添加车辆
       </van-button>
     </div>
@@ -136,38 +153,64 @@ const addRecord = () => {
       <div class="stats-section">
         <div class="stats-grid">
           <div class="stat-card">
-            <div class="stat-icon">⛽</div>
+            <div class="stat-icon">
+              ⛽
+            </div>
             <div class="stat-content">
-              <div class="stat-value">{{ formatConsumption(stats.latest_consumption) }}</div>
-              <div class="stat-label">本次油耗</div>
+              <div class="stat-value">
+                {{ formatConsumption(stats.latest_consumption) }}
+              </div>
+              <div class="stat-label">
+                本次油耗
+              </div>
             </div>
           </div>
           <div class="stat-card">
-            <div class="stat-icon">📊</div>
+            <div class="stat-icon">
+              📊
+            </div>
             <div class="stat-content">
-              <div class="stat-value">{{ formatConsumption(stats.avg_consumption) }}</div>
-              <div class="stat-label">平均油耗</div>
+              <div class="stat-value">
+                {{ formatConsumption(stats.avg_consumption) }}
+              </div>
+              <div class="stat-label">
+                平均油耗
+              </div>
             </div>
           </div>
           <div class="stat-card">
-            <div class="stat-icon">💰</div>
+            <div class="stat-icon">
+              💰
+            </div>
             <div class="stat-content">
-              <div class="stat-value">{{ formatMoney(stats.total_cost) }}</div>
-              <div class="stat-label">总花费</div>
+              <div class="stat-value">
+                {{ formatMoney(stats.total_cost) }}
+              </div>
+              <div class="stat-label">
+                总花费
+              </div>
             </div>
           </div>
           <div class="stat-card">
-            <div class="stat-icon">📍</div>
+            <div class="stat-icon">
+              📍
+            </div>
             <div class="stat-content">
-              <div class="stat-value">{{ formatOdometer(stats.total_distance) }}</div>
-              <div class="stat-label">总里程</div>
+              <div class="stat-value">
+                {{ formatOdometer(stats.total_distance) }}
+              </div>
+              <div class="stat-label">
+                总里程
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       <!-- 油耗趋势图 -->
-      <div class="section-title">📈 油耗趋势</div>
+      <div class="section-title">
+        📈 油耗趋势
+      </div>
       <div class="chart-card">
         <StatsChart
           v-if="trendData.length > 0"
@@ -175,17 +218,36 @@ const addRecord = () => {
           :data="trendData"
           :loading="loading"
         />
-        <div v-else-if="!loading" class="chart-empty">
-          <van-empty description="暂无数据" image-size="60" />
+        <div
+          v-else-if="!loading"
+          class="chart-empty"
+        >
+          <van-empty
+            description="暂无数据"
+            image-size="60"
+          />
         </div>
       </div>
 
       <!-- 最近记录 -->
-      <div class="section-title">📝 最近记录</div>
+      <div class="section-title">
+        📝 最近记录
+      </div>
       <div class="records-list">
-        <div v-if="recentRecords.length === 0" class="empty-records">
-          <van-empty description="暂无记录" image-size="60">
-            <van-button round type="primary" size="small" @click="addRecord">
+        <div
+          v-if="recentRecords.length === 0"
+          class="empty-records"
+        >
+          <van-empty
+            description="暂无记录"
+            image-size="60"
+          >
+            <van-button
+              round
+              type="primary"
+              size="small"
+              @click="addRecord"
+            >
               添加记录
             </van-button>
           </van-empty>
@@ -198,21 +260,34 @@ const addRecord = () => {
         >
           <div class="record-header">
             <span class="record-date">{{ record.date }}</span>
-            <span v-if="record.fuel_consumption" class="record-consumption">
+            <span
+              v-if="record.fuel_consumption"
+              class="record-consumption"
+            >
               {{ formatConsumption(record.fuel_consumption) }}
             </span>
           </div>
           <div class="record-body">
             <div class="record-info">
-              <div class="record-icon">⛽</div>
+              <div class="record-icon">
+                ⛽
+              </div>
               <div class="record-details">
-                <div class="record-station">{{ record.gas_station || '加油站' }}</div>
-                <div class="record-odometer">{{ record.odometer }} km</div>
+                <div class="record-station">
+                  {{ record.gas_station || '加油站' }}
+                </div>
+                <div class="record-odometer">
+                  {{ record.odometer }} km
+                </div>
               </div>
             </div>
             <div class="record-cost">
-              <div class="cost-value">{{ formatMoney(record.total_cost) }}</div>
-              <div class="cost-label">花费</div>
+              <div class="cost-value">
+                {{ formatMoney(record.total_cost) }}
+              </div>
+              <div class="cost-label">
+                花费
+              </div>
             </div>
           </div>
         </div>
@@ -229,7 +304,11 @@ const addRecord = () => {
     />
 
     <!-- 车辆选择弹窗 -->
-    <van-popup v-model:show="showVehiclePicker" position="bottom" round>
+    <van-popup
+      v-model:show="showVehiclePicker"
+      position="bottom"
+      round
+    >
       <van-picker
         :columns="vehicleColumns"
         :model-value="vehiclePickerValue"

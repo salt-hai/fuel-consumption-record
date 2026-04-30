@@ -162,13 +162,19 @@ const onSelectPeriod = ({ selectedValues }: any) => {
     <!-- 车辆和时间选择 -->
     <div class="filter-section">
       <div class="filter-card">
-        <div class="filter-item" @click="showVehiclePicker = true">
+        <div
+          class="filter-item"
+          @click="showVehiclePicker = true"
+        >
           <span class="filter-label">车辆</span>
           <span class="filter-value">{{ currentVehicleName }}</span>
           <van-icon name="arrow-down" />
         </div>
         <div class="filter-divider" />
-        <div class="filter-item" @click="showPeriodPicker = true">
+        <div
+          class="filter-item"
+          @click="showPeriodPicker = true"
+        >
           <span class="filter-label">时间范围</span>
           <span class="filter-value">{{ currentPeriodText }}</span>
           <van-icon name="arrow-down" />
@@ -177,56 +183,96 @@ const onSelectPeriod = ({ selectedValues }: any) => {
     </div>
 
     <!-- 统计卡片 -->
-    <div class="section-title">📊 数据汇总</div>
+    <div class="section-title">
+      📊 数据汇总
+    </div>
     <div class="stats-section">
       <div class="stats-grid">
         <div class="stat-card">
-          <div class="stat-icon">📝</div>
+          <div class="stat-icon">
+            📝
+          </div>
           <div class="stat-content">
-            <div class="stat-value">{{ summary.total_records }}</div>
-            <div class="stat-label">总记录数</div>
+            <div class="stat-value">
+              {{ summary.total_records }}
+            </div>
+            <div class="stat-label">
+              总记录数
+            </div>
           </div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon">💰</div>
+          <div class="stat-icon">
+            💰
+          </div>
           <div class="stat-content">
-            <div class="stat-value">{{ formatMoney(summary.total_cost) }}</div>
-            <div class="stat-label">总花费</div>
+            <div class="stat-value">
+              {{ formatMoney(summary.total_cost) }}
+            </div>
+            <div class="stat-label">
+              总花费
+            </div>
           </div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon">📍</div>
+          <div class="stat-icon">
+            📍
+          </div>
           <div class="stat-content">
-            <div class="stat-value">{{ formatOdometer(summary.total_distance) }}</div>
-            <div class="stat-label">总里程</div>
+            <div class="stat-value">
+              {{ formatOdometer(summary.total_distance) }}
+            </div>
+            <div class="stat-label">
+              总里程
+            </div>
           </div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon">⛽</div>
+          <div class="stat-icon">
+            ⛽
+          </div>
           <div class="stat-content">
-            <div class="stat-value">{{ formatConsumption(summary.avg_consumption) }}</div>
-            <div class="stat-label">平均油耗</div>
+            <div class="stat-value">
+              {{ formatConsumption(summary.avg_consumption) }}
+            </div>
+            <div class="stat-label">
+              平均油耗
+            </div>
           </div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon">📈</div>
+          <div class="stat-icon">
+            📈
+          </div>
           <div class="stat-content">
-            <div class="stat-value">{{ formatConsumption(summary.latest_consumption) }}</div>
-            <div class="stat-label">最新油耗</div>
+            <div class="stat-value">
+              {{ formatConsumption(summary.latest_consumption) }}
+            </div>
+            <div class="stat-label">
+              最新油耗
+            </div>
           </div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon">💵</div>
+          <div class="stat-icon">
+            💵
+          </div>
           <div class="stat-content">
-            <div class="stat-value">¥{{ summary.avg_cost_per_km }}</div>
-            <div class="stat-label">平均油费</div>
+            <div class="stat-value">
+              ¥{{ summary.avg_cost_per_km }}
+            </div>
+            <div class="stat-label">
+              平均油费
+            </div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- 月度花费图表 -->
-    <div class="section-title">💵 月度花费</div>
+    <div class="section-title">
+      💵 月度花费
+    </div>
     <div class="chart-card">
       <StatsChart
         v-if="monthlyStats.length > 0"
@@ -234,13 +280,21 @@ const onSelectPeriod = ({ selectedValues }: any) => {
         :data="monthlyStats"
         :loading="loading"
       />
-      <div v-else-if="!loading" class="chart-empty">
-        <van-empty description="暂无数据" image-size="60" />
+      <div
+        v-else-if="!loading"
+        class="chart-empty"
+      >
+        <van-empty
+          description="暂无数据"
+          image-size="60"
+        />
       </div>
     </div>
 
     <!-- 油耗趋势图表 -->
-    <div class="section-title">📈 油耗趋势</div>
+    <div class="section-title">
+      📈 油耗趋势
+    </div>
     <div class="chart-card">
       <StatsChart
         v-if="trendStats.length > 0"
@@ -248,18 +302,35 @@ const onSelectPeriod = ({ selectedValues }: any) => {
         :data="trendStats"
         :loading="loading"
       />
-      <div v-else-if="!loading" class="chart-empty">
-        <van-empty description="暂无数据" image-size="60" />
+      <div
+        v-else-if="!loading"
+        class="chart-empty"
+      >
+        <van-empty
+          description="暂无数据"
+          image-size="60"
+        />
       </div>
     </div>
 
     <!-- 月度统计表格 -->
-    <div class="section-title">📅 月度详情</div>
+    <div class="section-title">
+      📅 月度详情
+    </div>
     <div class="table-card">
-      <div v-if="monthlyStats.length === 0" class="table-empty">
-        <van-empty description="暂无数据" image-size="60" />
+      <div
+        v-if="monthlyStats.length === 0"
+        class="table-empty"
+      >
+        <van-empty
+          description="暂无数据"
+          image-size="60"
+        />
       </div>
-      <table v-else class="stats-table">
+      <table
+        v-else
+        class="stats-table"
+      >
         <thead>
           <tr>
             <th>月份</th>
@@ -268,7 +339,10 @@ const onSelectPeriod = ({ selectedValues }: any) => {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="stat in monthlyStats" :key="stat.month">
+          <tr
+            v-for="stat in monthlyStats"
+            :key="stat.month"
+          >
             <td>{{ stat.month }}</td>
             <td>{{ formatMoney(stat.cost) }}</td>
             <td>{{ formatConsumption(stat.consumption) }}</td>
@@ -278,7 +352,11 @@ const onSelectPeriod = ({ selectedValues }: any) => {
     </div>
 
     <!-- 车辆选择弹窗 -->
-    <van-popup v-model:show="showVehiclePicker" position="bottom" round>
+    <van-popup
+      v-model:show="showVehiclePicker"
+      position="bottom"
+      round
+    >
       <van-picker
         :columns="vehicleColumns"
         :model-value="vehiclePickerValue"
@@ -288,7 +366,11 @@ const onSelectPeriod = ({ selectedValues }: any) => {
     </van-popup>
 
     <!-- 时间选择弹窗 -->
-    <van-popup v-model:show="showPeriodPicker" position="bottom" round>
+    <van-popup
+      v-model:show="showPeriodPicker"
+      position="bottom"
+      round
+    >
       <van-picker
         :columns="periodOptions"
         @confirm="onSelectPeriod"

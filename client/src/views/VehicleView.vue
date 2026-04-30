@@ -105,32 +105,64 @@ const onSubmitEdit = async () => {
     <van-nav-bar title="车辆管理" />
 
     <!-- 空状态 -->
-    <div v-if="vehiclesStore.vehicles.length === 0" class="empty-state">
-      <div class="empty-icon">🚗</div>
-      <p class="empty-title">还没有添加车辆</p>
-      <p class="empty-desc">添加第一辆车开始记录油耗吧</p>
-      <van-button type="primary" round size="small" @click="onAdd">
+    <div
+      v-if="vehiclesStore.vehicles.length === 0"
+      class="empty-state"
+    >
+      <div class="empty-icon">
+        🚗
+      </div>
+      <p class="empty-title">
+        还没有添加车辆
+      </p>
+      <p class="empty-desc">
+        添加第一辆车开始记录油耗吧
+      </p>
+      <van-button
+        type="primary"
+        round
+        size="small"
+        @click="onAdd"
+      >
         添加车辆
       </van-button>
     </div>
 
     <!-- 车辆列表 -->
-    <div v-else class="vehicle-list">
+    <div
+      v-else
+      class="vehicle-list"
+    >
       <div
         v-for="vehicle in vehiclesStore.vehicles"
         :key="vehicle.id"
         class="vehicle-card"
       >
         <div class="vehicle-header">
-          <div class="vehicle-icon">{{ vehicle.icon }}</div>
-          <div class="vehicle-info">
-            <div class="vehicle-name">{{ vehicle.name }}</div>
-            <div class="vehicle-details">{{ vehicle.brand || '' }} {{ vehicle.model || '' }}</div>
+          <div class="vehicle-icon">
+            {{ vehicle.icon }}
           </div>
-          <van-tag v-if="!vehicle.is_active" type="warning" round>已停用</van-tag>
+          <div class="vehicle-info">
+            <div class="vehicle-name">
+              {{ vehicle.name }}
+            </div>
+            <div class="vehicle-details">
+              {{ vehicle.brand || '' }} {{ vehicle.model || '' }}
+            </div>
+          </div>
+          <van-tag
+            v-if="!vehicle.is_active"
+            type="warning"
+            round
+          >
+            已停用
+          </van-tag>
         </div>
         <div class="vehicle-meta">
-          <span v-if="vehicle.plate_number" class="meta-item">
+          <span
+            v-if="vehicle.plate_number"
+            class="meta-item"
+          >
             <span class="meta-label">车牌</span>
             <span class="meta-value">{{ vehicle.plate_number }}</span>
           </span>
@@ -144,10 +176,21 @@ const onSubmitEdit = async () => {
           </span>
         </div>
         <div class="vehicle-actions">
-          <van-button size="small" type="primary" round @click="onEdit(vehicle)">
+          <van-button
+            size="small"
+            type="primary"
+            round
+            @click="onEdit(vehicle)"
+          >
             编辑
           </van-button>
-          <van-button size="small" type="danger" plain round @click="onDelete(vehicle)">
+          <van-button
+            size="small"
+            type="danger"
+            plain
+            round
+            @click="onDelete(vehicle)"
+          >
             删除
           </van-button>
         </div>
@@ -163,13 +206,23 @@ const onSubmitEdit = async () => {
     />
 
     <!-- 添加车辆弹窗 -->
-    <van-popup v-model:show="showAddDialog" position="bottom" round>
+    <van-popup
+      v-model:show="showAddDialog"
+      position="bottom"
+      round
+    >
       <div class="popup-content">
         <div class="popup-header">
           <h3>添加车辆</h3>
-          <van-icon name="cross" @click="showAddDialog = false" />
+          <van-icon
+            name="cross"
+            @click="showAddDialog = false"
+          />
         </div>
-        <van-form @submit="onSubmitAdd" class="popup-form">
+        <van-form
+          class="popup-form"
+          @submit="onSubmitAdd"
+        >
           <van-field
             v-model="newVehicle.icon"
             label="图标"
@@ -215,10 +268,19 @@ const onSubmitEdit = async () => {
             placeholder="92号汽油"
           />
           <div class="popup-actions">
-            <van-button round block @click="showAddDialog = false">
+            <van-button
+              round
+              block
+              @click="showAddDialog = false"
+            >
               取消
             </van-button>
-            <van-button round block type="primary" native-type="submit">
+            <van-button
+              round
+              block
+              type="primary"
+              native-type="submit"
+            >
               添加
             </van-button>
           </div>
@@ -227,13 +289,23 @@ const onSubmitEdit = async () => {
     </van-popup>
 
     <!-- 编辑车辆弹窗 -->
-    <van-popup v-model:show="showEditDialog" position="bottom" round>
+    <van-popup
+      v-model:show="showEditDialog"
+      position="bottom"
+      round
+    >
       <div class="popup-content">
         <div class="popup-header">
           <h3>编辑车辆</h3>
-          <van-icon name="cross" @click="showEditDialog = false" />
+          <van-icon
+            name="cross"
+            @click="showEditDialog = false"
+          />
         </div>
-        <van-form @submit="onSubmitEdit" class="popup-form">
+        <van-form
+          class="popup-form"
+          @submit="onSubmitEdit"
+        >
           <van-field
             v-model="newVehicle.icon"
             label="图标"
@@ -279,10 +351,19 @@ const onSubmitEdit = async () => {
             placeholder="92号汽油"
           />
           <div class="popup-actions">
-            <van-button round block @click="showEditDialog = false">
+            <van-button
+              round
+              block
+              @click="showEditDialog = false"
+            >
               取消
             </van-button>
-            <van-button round block type="primary" native-type="submit">
+            <van-button
+              round
+              block
+              type="primary"
+              native-type="submit"
+            >
               保存
             </van-button>
           </div>
@@ -291,11 +372,18 @@ const onSubmitEdit = async () => {
     </van-popup>
 
     <!-- 图标选择弹窗 -->
-    <van-popup v-model:show="showIconPicker" position="bottom" round>
+    <van-popup
+      v-model:show="showIconPicker"
+      position="bottom"
+      round
+    >
       <div class="icon-picker-popup">
         <div class="popup-header">
           <h3>选择图标</h3>
-          <van-icon name="cross" @click="showIconPicker = false" />
+          <van-icon
+            name="cross"
+            @click="showIconPicker = false"
+          />
         </div>
         <div class="icon-grid">
           <div
