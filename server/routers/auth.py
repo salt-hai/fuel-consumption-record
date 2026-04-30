@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
 from models.user import User
 from models.token import Token
-from schemas.auth import RegisterRequest, LoginRequest, ChangePasswordRequest
+from schemas.auth import RegisterRequest, LoginRequest, ChangePasswordRequest, UpdateNameRequest
 from schemas.common import success_response
 from utils.auth import get_current_user, generate_token, hash_token
 from config import settings, is_email_allowed
@@ -149,3 +149,20 @@ async def change_password(
     await db.commit()
 
     return success_response(message="密码修改成功")
+
+@router.put("/name/")
+async def update_name(
+    data: UpdateNameRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """修改用户名"""
+    current_user.name = data.name
+    await db.commit()
+    await db.refresh(current_user)
+
+    return success_response({
+        "id": current_user.id,
+        "email": current_user.email,
+        "name": current_user.name
+    }, "用户名修改成功")

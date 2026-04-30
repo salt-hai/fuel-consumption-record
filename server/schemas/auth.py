@@ -17,6 +17,10 @@ class ChangePasswordRequest(BaseModel):
     new_password: str = Field(..., min_length=6, max_length=72, description="新密码（6-72位）")
 
 
+class UpdateNameRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=50, description="新用户名")
+
+
 class AuthResponse(BaseModel):
     token: str
     user: dict

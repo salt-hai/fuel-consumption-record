@@ -40,6 +40,11 @@ export const changePassword = (data: ChangePasswordRequest) => {
   return api.put('/v1/auth/password/', data)
 }
 
+// 修改用户名
+export const updateName = (data: { name: string }) => {
+  return api.put<{ id: number; email: string; name: string }>('/v1/auth/name/', data)
+}
+
 // 退出登录
 export const logout = () => {
   return api.delete('/v1/auth/logout/')

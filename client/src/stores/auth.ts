@@ -73,6 +73,13 @@ export const useAuthStore = defineStore('auth', () => {
     await authApi.changePassword({ old_password: oldPassword, new_password: newPassword })
   }
 
+  // 修改用户名
+  const updateName = async (name: string) => {
+    const res = await authApi.updateName({ name })
+    user.value = { ...user.value, ...res }
+    localStorage.setItem('auth_user', JSON.stringify(user.value))
+  }
+
   return {
     token,
     user,
@@ -81,6 +88,7 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     logout,
     changePassword,
+    updateName,
     fetchCurrentUser,
   }
 })

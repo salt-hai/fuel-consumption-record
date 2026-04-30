@@ -20,6 +20,8 @@ const vehicleCount = computed(() => (vehiclesStore.vehicles || []).length)
 
 const showPasswordDialog = ref(false)
 const showLogoutDialog = ref(false)
+const showNameDialog = ref(false)
+const nameForm = ref({ name: '' })
 const passwordForm = ref({
   old_password: '',
   new_password: '',
@@ -53,6 +55,26 @@ const onChangePassword = async () => {
     new_password: '',
     confirm_password: '',
   }
+}
+
+const onOpenNameDialog = () => {
+  nameForm.value.name = authStore.user?.name || ''
+  showNameDialog.value = true
+}
+
+const onChangeName = async () => {
+  const trimmed = nameForm.value.name.trim()
+  if (!trimmed) {
+    showToast({ message: '请输入用户名' })
+    return
+  }
+  if (trimmed === authStore.user?.name) {
+    showNameDialog.value = false
+    return
+  }
+  await authStore.updateName(trimmed)
+  showToast({ message: '用户名修改成功', type: 'success' })
+  showNameDialog.value = false
 }
 
 const onLogout = () => {
@@ -124,20 +146,33 @@ const onAbout = () => {
 
     <!-- 用户信息卡片 -->
     <div class="user-card">
-      <div class="user-avatar">{{ userInitial }}</div>
+      <div class="user-avatar">
+        {{ userInitial }}
+      </div>
       <div class="user-info">
-        <div class="user-name">{{ userName }}</div>
-        <div class="user-email">{{ userEmail }}</div>
+        <div class="user-name">
+          {{ userName }}
+        </div>
+        <div class="user-email">
+          {{ userEmail }}
+        </div>
       </div>
       <div class="user-stats">
         <div class="stat-item">
-          <div class="stat-value">{{ vehicleCount }}</div>
-          <div class="stat-label">车辆</div>
+          <div class="stat-value">
+            {{ vehicleCount }}
+          </div>
+          <div class="stat-label">
+            车辆
+          </div>
         </div>
       </div>
     </div>
 
-    <van-cell-group inset title="车辆管理">
+    <van-cell-group
+      inset
+      title="车辆管理"
+    >
       <van-cell
         title="我的车辆"
         is-link
@@ -145,7 +180,15 @@ const onAbout = () => {
       />
     </van-cell-group>
 
-    <van-cell-group inset title="账户安全">
+    <van-cell-group
+      inset
+      title="账户安全"
+    >
+      <van-cell
+        title="修改用户名"
+        is-link
+        @click="onOpenNameDialog"
+      />
       <van-cell
         title="修改密码"
         is-link
@@ -158,7 +201,10 @@ const onAbout = () => {
       />
     </van-cell-group>
 
-    <van-cell-group inset title="数据管理">
+    <van-cell-group
+      inset
+      title="数据管理"
+    >
       <van-cell
         title="导出 CSV"
         is-link
@@ -171,7 +217,10 @@ const onAbout = () => {
       />
     </van-cell-group>
 
-    <van-cell-group inset title="关于">
+    <van-cell-group
+      inset
+      title="关于"
+    >
       <van-cell
         title="关于应用"
         is-link
@@ -180,13 +229,23 @@ const onAbout = () => {
     </van-cell-group>
 
     <!-- 修改密码弹窗 -->
-    <van-popup v-model:show="showPasswordDialog" position="bottom" round>
+    <van-popup
+      v-model:show="showPasswordDialog"
+      position="bottom"
+      round
+    >
       <div class="popup-content">
         <div class="popup-header">
           <h3>修改密码</h3>
-          <van-icon name="cross" @click="showPasswordDialog = false" />
+          <van-icon
+            name="cross"
+            @click="showPasswordDialog = false"
+          />
         </div>
-        <van-form @submit="onChangePassword" class="popup-form">
+        <van-form
+          class="popup-form"
+          @submit="onChangePassword"
+        >
           <van-field
             v-model="passwordForm.old_password"
             type="password"
@@ -209,10 +268,66 @@ const onAbout = () => {
             :rules="[{ required: true, message: '请确认新密码' }]"
           />
           <div class="popup-actions">
-            <van-button round block @click="showPasswordDialog = false">
+            <van-button
+              round
+              block
+              @click="showPasswordDialog = false"
+            >
               取消
             </van-button>
-            <van-button round block type="primary" native-type="submit">
+            <van-button
+              round
+              block
+              type="primary"
+              native-type="submit"
+            >
+              确认修改
+            </van-button>
+          </div>
+        </van-form>
+      </div>
+    </van-popup>
+
+    <!-- 修改用户名弹窗 -->
+    <van-popup
+      v-model:show="showNameDialog"
+      position="bottom"
+      round
+    >
+      <div class="popup-content">
+        <div class="popup-header">
+          <h3>修改用户名</h3>
+          <van-icon
+            name="cross"
+            @click="showNameDialog = false"
+          />
+        </div>
+        <van-form
+          class="popup-form"
+          @submit="onChangeName"
+        >
+          <van-field
+            v-model="nameForm.name"
+            label="用户名"
+            placeholder="请输入新用户名"
+            maxlength="50"
+            show-word-limit
+            :rules="[{ required: true, message: '请输入用户名' }]"
+          />
+          <div class="popup-actions">
+            <van-button
+              round
+              block
+              @click="showNameDialog = false"
+            >
+              取消
+            </van-button>
+            <van-button
+              round
+              block
+              type="primary"
+              native-type="submit"
+            >
               确认修改
             </van-button>
           </div>
@@ -221,19 +336,37 @@ const onAbout = () => {
     </van-popup>
 
     <!-- 退出登录弹窗 -->
-    <van-popup v-model:show="showLogoutDialog" position="bottom" round>
+    <van-popup
+      v-model:show="showLogoutDialog"
+      position="bottom"
+      round
+    >
       <div class="popup-content">
         <div class="popup-header">
           <h3>确认退出</h3>
-          <van-icon name="cross" @click="showLogoutDialog = false" />
+          <van-icon
+            name="cross"
+            @click="showLogoutDialog = false"
+          />
         </div>
         <div class="popup-form">
-          <p class="confirm-message">确定要退出登录吗？</p>
+          <p class="confirm-message">
+            确定要退出登录吗？
+          </p>
           <div class="popup-actions">
-            <van-button round block @click="showLogoutDialog = false">
+            <van-button
+              round
+              block
+              @click="showLogoutDialog = false"
+            >
               取消
             </van-button>
-            <van-button round block type="danger" @click="confirmLogout">
+            <van-button
+              round
+              block
+              type="danger"
+              @click="confirmLogout"
+            >
               退出
             </van-button>
           </div>
