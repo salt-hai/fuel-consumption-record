@@ -37,9 +37,11 @@ const vehicleDisplayValue = ref('点击选择车辆')
 const dateDisplayValue = ref(formData.value.date)
 const unitPriceDisplay = ref('0.00')
 const showCalcInfo = ref(false)
+const lastEditedField = ref<'volume' | 'unit_price'>('volume')
 
-// 计算单价
+// 计算单价（由加油量和总金额推导）
 watch(() => [formData.value.volume, formData.value.total_cost], ([newVolume, newCost]) => {
+  if (lastEditedField.value !== 'volume') return
   if (newVolume > 0 && newCost > 0) {
     unitPriceDisplay.value = (newCost / newVolume).toFixed(2)
     formData.value.unit_price = parseFloat(unitPriceDisplay.value)
@@ -48,6 +50,16 @@ watch(() => [formData.value.volume, formData.value.total_cost], ([newVolume, new
     formData.value.unit_price = 0
   }
 }, { immediate: true })
+
+// 计算加油量（由单价和总金额推导）
+watch(() => [formData.value.unit_price, formData.value.total_cost], ([newPrice, newCost]) => {
+  if (lastEditedField.value !== 'unit_price') return
+  if (newPrice > 0 && newCost > 0) {
+    const derivedVolume = parseFloat((newCost / newPrice).toFixed(2))
+    formData.value.volume = derivedVolume
+    unitPriceDisplay.value = newPrice.toFixed(2)
+  }
+})
 
 watch(() => unitPriceDisplay.value, (newVal) => {
   const parsed = parseFloat(newVal)
@@ -251,8 +263,7 @@ const onSelectVehicle = ({ selectedValues }: any) => {
             label="加油量"
             placeholder="请输入加油量"
             suffix="L"
-            required
-            :rules="[{ required: true, message: '请输入加油量' }]"
+            @input="lastEditedField = 'volume'"
           />
 
           <van-field
@@ -271,6 +282,7 @@ const onSelectVehicle = ({ selectedValues }: any) => {
             label="单价"
             placeholder="自动计算"
             suffix="元/L"
+            @input="lastEditedField = 'unit_price'"
           />
 
           <van-field

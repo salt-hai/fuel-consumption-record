@@ -217,6 +217,8 @@ async def update_record(
 
     # 检查是否修改了 volume 或 total_cost，且没有提供新的 unit_price
     should_recalc_price = ('volume' in update_data or 'total_cost' in update_data) and 'unit_price' not in update_data
+    # 检查是否修改了 unit_price 或 total_cost，且没有提供新的 volume
+    should_recalc_volume = ('unit_price' in update_data or 'total_cost' in update_data) and 'volume' not in update_data
 
     # 检查是否需要级联更新下一条加满记录的油耗
     affects_next_calculation = any(key in update_data for key in ('full_tank', 'odometer', 'volume'))
@@ -230,6 +232,9 @@ async def update_record(
     # 如果修改了 volume 或 total_cost 且没有提供新单价，则自动计算
     if should_recalc_price and record.volume > 0:
         record.unit_price = round(record.total_cost / record.volume, 2)
+    # 如果修改了 unit_price 或 total_cost 且没有提供新加油量，则自动计算
+    elif should_recalc_volume and record.unit_price and record.unit_price > 0:
+        record.volume = round(record.total_cost / record.unit_price, 2)
 
     # 重新计算当前记录油耗（累积法）
     if record.full_tank:
