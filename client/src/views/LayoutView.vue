@@ -8,6 +8,7 @@ const route = useRoute()
 const tabs = [
   { name: '首页', path: '/', icon: 'home-o' },
   { name: '记录', path: '/records', icon: 'bar-chart-o' },
+  { name: '保养', path: '/maintenance', icon: 'shield-o' },
   { name: '统计', path: '/stats', icon: 'chart-trending-o' },
   { name: '我的', path: '/settings', icon: 'user-o' },
 ]
