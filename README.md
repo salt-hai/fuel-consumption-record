@@ -75,13 +75,13 @@ cp .env.example .env
 nano .env  # 修改 SECRET_KEY
 
 # 启动服务
-docker compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.yml up -d
 
 # 查看日志
-docker compose -f docker-compose.prod.yml logs -f
+docker compose -f docker-compose.yml logs -f
 
 # 停止服务
-docker compose -f docker-compose.prod.yml down
+docker compose -f docker-compose.yml down
 ```
 
 **目录结构（运行后）：**
